@@ -26,3 +26,11 @@ func CreateAUser(c *gin.Context) {
 		c.JSON(http.StatusOK, user)
 	}
 }
+
+func DeleteAUser(c *gin.Context) {
+	if err := models.DeleteAUser(c.Param("name")); err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+	} else {
+		c.JSON(http.StatusOK, "success")
+	}
+}

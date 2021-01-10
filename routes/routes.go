@@ -11,6 +11,7 @@ func Handler() *gin.Engine {
 	{
 		v1.GET("/user", controllers.GetUsers)
 		v1.POST("/user", controllers.CreateAUser)
+		v1.DELETE("/user/:name", controllers.DeleteAUser)
 	}
 
 	return r

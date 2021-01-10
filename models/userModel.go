@@ -23,3 +23,14 @@ func GetAllUsers(user *[]User) error {
 	}
 	return nil
 }
+func DeleteAUser(name string) error {
+	var user []User
+	if getAllUsersErr := GetAllUsers(&user); getAllUsersErr != nil {
+		return getAllUsersErr
+	}
+
+	if err := database.DB.Where("name = ?", name).Delete(user).Error; err != nil {
+		return err
+	}
+	return nil
+}
