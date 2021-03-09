@@ -1,10 +1,21 @@
 #!/bin/bash
-curl -i -XPOST 0.0.0.0:8080/v1/user --header 'Content-Type: Application/json' --data '{"name":"eddie","password":"123","email":"123@gmail.com"}'
 
-curl -i -XDELETE 0.0.0.0:8080/v1/user/eddie
+curl -i -XPOST http://0.0.0.0:8080/login \ 
+--header 'application/x-www-form-urlencoded'
+--data 'idtoken=GOOGLE_CLIENT_ID_TOKEN'
 
-curl -i 0.0.0.0:8080/v1/user 
+curl -i -XGET http://0.0.0.0:8080/v1/user \
+--cookie 'whiteboardsession=WHITEBOARD_COOKIE'
 
+curl -i -XPOST http://0.0.0.0:8080/v1/user \ 
+--header 'Content-Type: Application/json' \ 
+--data '{"name":"John","email":"foobar@example.com"}' \
+--cookie 'whiteboardsession=WHITEBOARD_COOKIE'
 
-echo "done"
+curl -i -XDELETE http://0.0.0.0:8080/v1/user/eddie
+--cookie 'whiteboardsession=WHITEBOARD_COOKIE'
+
+curl -i http://0.0.0.0:8080/v1/user 
+--cookie 'whiteboardsession=WHITEBOARD_COOKIE'
+
 

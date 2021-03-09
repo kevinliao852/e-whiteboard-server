@@ -5,9 +5,8 @@ import (
 )
 
 type User struct {
-	ID uint `json:"id"`
-	Name string `json:"name"`
-	Password string `json:"password"`
+	ID    string `json:"id"`
+	Name  string `json:"name"`
 	Email string `json:"email"`
 }
 
@@ -17,12 +16,15 @@ func CreateAUser(user *User) error {
 	}
 	return nil
 }
+
 func GetAllUsers(user *[]User) error {
 	if err := database.DB.Find(user).Error; err != nil {
+
 		return err
 	}
 	return nil
 }
+
 func DeleteAUser(name string) error {
 	var user []User
 	if getAllUsersErr := GetAllUsers(&user); getAllUsersErr != nil {
@@ -30,6 +32,13 @@ func DeleteAUser(name string) error {
 	}
 
 	if err := database.DB.Where("name = ?", name).Delete(user).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetUserById(user *User, id string) error {
+	if err := database.DB.First(user, "id = ?", id).Error; err != nil {
 		return err
 	}
 	return nil

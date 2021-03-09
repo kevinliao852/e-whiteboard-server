@@ -1,18 +1,27 @@
 package main
 
 import (
-	"app/routes"
 	"app/database"
 	"app/models"
+	"app/routes"
+	"log"
+	"os"
+
+	"github.com/joho/godotenv"
 )
 
 var err error
 
 func main() {
-	database.DB, err = database.Connect()
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 
+	database.DB, _ = database.Connect(os.Getenv("DATABASE_PATH"))
 	database.DB.AutoMigrate(&models.User{})
 
 	r := routes.Handler()
-	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	r.Run(os.Getenv("APP_HOST") + ":" + os.Getenv("APP_PORT"))
+
 }
