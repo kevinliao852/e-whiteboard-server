@@ -1,0 +1,9 @@
+POST http://localhost:8080/v1/user HTTP/1.1
+content-type: application/json
+
+{
+    "name":"kevin",
+    "email": "kevin@kevin.io",
+    "id": "google_uid_123123123"
+}
+
