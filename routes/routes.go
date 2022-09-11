@@ -24,12 +24,13 @@ func Handler() *gin.Engine {
 	r.Use(sessions.Sessions("whiteboardsession", store))
 	r.Use(cors.New(config))
 
-	v1 := r.Group("/v1", middlewares.AuthRequired)
+	v1 := r.Group("/v1")
 	{
-		v1.GET("/user", controllers.GetUsers)
-		v1.GET("/user/:id", controllers.GetUser)
+		v1.GET("/user/:id", controllers.GetUser, middlewares.AuthRequired)
+		v1.GET("/user", controllers.GetUsers, middlewares.AuthRequired)
 		v1.POST("/user", controllers.CreateAUser)
-		v1.DELETE("/user/:name", controllers.DeleteAUser)
+		v1.GET("/user/:id", controllers.GetUser, middlewares.AuthRequired)
+		v1.DELETE("/user/:name", controllers.DeleteAUser, middlewares.AuthRequired)
 	}
 
 	r.POST("/login", controllers.Login(os.Getenv("GOOGLE_CLIENT_ID")))
