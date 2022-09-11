@@ -34,7 +34,7 @@ func GetUser(c *gin.Context) {
 	}
 }
 
-func CreateAUser(c *gin.Context) {
+func Register(c *gin.Context) {
 	var user models.User
 	c.BindJSON(&user)
 	err := models.CreateAUser(&user)
