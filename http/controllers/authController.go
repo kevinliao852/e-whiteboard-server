@@ -2,11 +2,11 @@ package controllers
 
 import (
 	"context"
-	"net/http"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/api/idtoken"
 	"google.golang.org/api/option"
+	"net/http"
 )
 
 func Login(id string) gin.HandlerFunc {
@@ -15,20 +15,18 @@ func Login(id string) gin.HandlerFunc {
 		client := &http.Client{}
 		tokenValidator, _ := idtoken.NewValidator(context.Background(), option.WithHTTPClient(client))
 
-
 		token := c.PostForm("idtoken")
 		if token == "" {
 			c.JSON(http.StatusBadRequest, map[string]string{"status": "invalid data"})
 			return
 		}
-		
+
 		payload, _ := tokenValidator.Validate(context.Background(), token, id)
-		
+
 		if payload == nil {
 			c.JSON(http.StatusBadRequest, map[string]string{"status": "invalid data"})
-			return 
+			return
 		}
-
 
 		// Check if database have this user's credential.
 		// If not, register this user
@@ -40,7 +38,6 @@ func Login(id string) gin.HandlerFunc {
 			session.Set("exp", payload.Claims["exp"])
 			session.Save()
 		}
-
 
 		c.JSON(http.StatusOK, "ok")
 	}
