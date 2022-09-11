@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"net/http"
-
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/api/idtoken"
@@ -16,19 +15,23 @@ func Login(id string) gin.HandlerFunc {
 		client := &http.Client{}
 		tokenValidator, _ := idtoken.NewValidator(context.Background(), option.WithHTTPClient(client))
 
+
 		token := c.PostForm("idtoken")
 		if token == "" {
 			c.JSON(http.StatusBadRequest, map[string]string{"status": "invalid data"})
 			return
 		}
-
+		
 		payload, _ := tokenValidator.Validate(context.Background(), token, id)
+		
+		if payload == nil {
+			c.JSON(http.StatusBadRequest, map[string]string{"status": "invalid data"})
+			return 
+		}
 
-		/*
-			for key, element := range payload.Claims {
-				fmt.Println(key, element)
-			}
-		*/
+
+		// Check if database have this user's credential.
+		// If not, register this user
 
 		if session.Get("id") == nil {
 			session.Set("name", payload.Claims["given_name"])
@@ -37,6 +40,7 @@ func Login(id string) gin.HandlerFunc {
 			session.Set("exp", payload.Claims["exp"])
 			session.Save()
 		}
+
 
 		c.JSON(http.StatusOK, "ok")
 	}
