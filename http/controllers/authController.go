@@ -28,8 +28,9 @@ func Login(id string) gin.HandlerFunc {
 			return
 		}
 
+		
 		// Check if database have this user's credential.
-		// If not, register this user
+		// If not, sign up for this user
 
 		if session.Get("id") == nil {
 			session.Set("name", payload.Claims["given_name"])
