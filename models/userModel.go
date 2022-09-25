@@ -2,12 +2,16 @@ package models
 
 import (
 	"app/database"
+	"time"
 )
 
 type User struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	ID          uint
+	DisplayName string `json:"display_name"`
+	Email       string `json:"email" binding:"required"`
+	AuthToken   string `json:"auth_token" binding:"required"`
+	CreateAt    time.Time
+	UpdateAt    time.Time
 }
 
 func CreateAUser(user *User) error {
