@@ -29,7 +29,6 @@ func Handler() *gin.Engine {
 		v1.GET("/user/:id", controllers.GetUser, middlewares.AuthRequired)
 		v1.GET("/user", controllers.GetUsers, middlewares.AuthRequired)
 		v1.POST("/user", controllers.Register)
-		v1.GET("/user/:id", controllers.GetUser, middlewares.AuthRequired)
 		v1.DELETE("/user/:name", controllers.DeleteAUser, middlewares.AuthRequired)
 	}
 
