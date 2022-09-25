@@ -36,8 +36,15 @@ func GetUser(c *gin.Context) {
 
 func Register(c *gin.Context) {
 	var user models.User
-	c.BindJSON(&user)
-	err := models.CreateAUser(&user)
+	err := c.BindJSON(&user)
+
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return 
+	}
+
+	err = models.CreateAUser(&user)
+
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 	} else {
