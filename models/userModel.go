@@ -47,3 +47,10 @@ func GetUserById(user *User, id string) error {
 	}
 	return nil
 }
+
+func GetUserByGoogleId(user *User, gid string) error {
+	if err := database.DB.Find(user, "google_id = ?", gid).Error; err != nil {
+		return err
+	}
+	return nil
+}
