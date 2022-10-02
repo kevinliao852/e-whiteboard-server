@@ -9,7 +9,7 @@ type User struct {
 	ID          uint
 	DisplayName string `json:"display_name"`
 	Email       string `json:"email" binding:"required" gorm:"unique"`
-	AuthToken   string `json:"auth_token" binding:"required"`
+	GoogleId    string `json:"google_id" binding:"required"`
 	CreateAt    time.Time
 	UpdateAt    time.Time
 }
