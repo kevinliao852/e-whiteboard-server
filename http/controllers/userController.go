@@ -40,7 +40,7 @@ func Register(c *gin.Context) {
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
-		return 
+		return
 	}
 
 	err = models.CreateAUser(&user)
