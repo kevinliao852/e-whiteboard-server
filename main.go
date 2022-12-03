@@ -20,6 +20,7 @@ func main() {
 
 	database.DB, _ = database.Connect(os.Getenv("DATABASE_PATH"))
 	database.DB.AutoMigrate(&models.User{})
+	database.DB.AutoMigrate(&models.Whiteboard{})
 
 	r := routes.Handler()
 	r.Run(os.Getenv("APP_HOST") + ":" + os.Getenv("APP_PORT"))

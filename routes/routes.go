@@ -30,6 +30,7 @@ func Handler() *gin.Engine {
 		v1.GET("/user", controllers.GetUsers, middlewares.AuthRequired)
 		v1.POST("/user", controllers.Register)
 		v1.DELETE("/user/:name", controllers.DeleteAUser, middlewares.AuthRequired)
+		v1.GET("/whiteboards", controllers.GetWhitBoardByUser, middlewares.AuthRequired)
 	}
 
 	r.POST("/login", controllers.Login(os.Getenv("GOOGLE_CLIENT_ID")))
