@@ -9,6 +9,7 @@ import (
 )
 
 func GetWhitBoardByUser(c *gin.Context) {
+func GetWhiteboardByUser(c *gin.Context) {
 	var whiteboards []models.Whiteboard
 	userId, err := strconv.Atoi(c.DefaultQuery("userId", ""))
 
