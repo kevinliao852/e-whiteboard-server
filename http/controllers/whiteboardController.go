@@ -2,14 +2,22 @@ package controllers
 
 import (
 	"app/models"
+	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
-func GetWhitBoardByUser(c *gin.Context) {
-func GetWhiteboardByUser(c *gin.Context) {
+type WhiteboardControllerI interface {
+	GetWhiteboardByUser()
+}
+
+type WhiteboardController struct {
+	model models.Whiteboard
+}
+
+func (wc *WhiteboardController) GetWhiteboardByUserId(c *gin.Context) {
 	var whiteboards []models.Whiteboard
 	userId, err := strconv.Atoi(c.DefaultQuery("userId", ""))
 
@@ -18,7 +26,7 @@ func GetWhiteboardByUser(c *gin.Context) {
 		return
 	}
 
-	err = models.GetWhiteboardsByUserId(&whiteboards, uint(userId))
+	err = wc.model.GetWhiteboardsByUserId(&whiteboards, uint(userId))
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
@@ -26,4 +34,24 @@ func GetWhiteboardByUser(c *gin.Context) {
 		c.JSON(http.StatusOK, whiteboards)
 	}
 
+}
+
+func (wc *WhiteboardController) CreateWhiteboard(c *gin.Context) {
+	var whiteboard models.Whiteboard
+
+	err := c.BindJSON(&whiteboard)
+
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		log.Println(err)
+		return
+	}
+
+	err = wc.model.CreateAWhiteboard(&whiteboard)
+
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+	} else {
+		c.JSON(http.StatusOK, whiteboard)
+	}
 }

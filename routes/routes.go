@@ -21,6 +21,8 @@ func Handler() *gin.Engine {
 	config.AllowHeaders = []string{os.Getenv("HOST_AllOWHEADERS")}
 	config.AllowCredentials = true
 
+	var wc controllers.WhiteboardController
+
 	r.Use(sessions.Sessions("whiteboardsession", store))
 	r.Use(cors.New(config))
 
@@ -30,7 +32,8 @@ func Handler() *gin.Engine {
 		v1.GET("/user", controllers.GetUsers, middlewares.AuthRequired)
 		v1.POST("/user", controllers.Register)
 		v1.DELETE("/user/:name", controllers.DeleteAUser, middlewares.AuthRequired)
-		v1.GET("/whiteboards", controllers.GetWhiteboardByUserId, middlewares.AuthRequired)
+		v1.GET("/whiteboards", wc.GetWhiteboardByUserId)
+		v1.POST("/whiteboards", wc.CreateWhiteboard)
 	}
 
 	r.POST("/login", controllers.Login(os.Getenv("GOOGLE_CLIENT_ID")))
