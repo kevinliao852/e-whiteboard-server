@@ -13,7 +13,7 @@ import (
 
 func Handler() *gin.Engine {
 
-	r := gin.Default()
+	r := gin.New()
 	store := cookie.NewStore([]byte("secret"))
 
 	config := cors.DefaultConfig()
@@ -24,6 +24,7 @@ func Handler() *gin.Engine {
 	var wc controllers.WhiteboardController
 
 	r.Use(sessions.Sessions("whiteboardsession", store))
+	r.Use(middlewares.LoggerMiddleWare)
 	r.Use(cors.New(config))
 
 	v1 := r.Group("/v1")
