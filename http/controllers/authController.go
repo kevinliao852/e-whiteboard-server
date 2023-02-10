@@ -62,6 +62,10 @@ func Login(id string) gin.HandlerFunc {
 			session.Save()
 		}
 
-		c.JSON(http.StatusOK, "ok")
+		c.JSON(http.StatusOK, gin.H{
+			"id":           user.Id,
+			"email":        user.Email,
+			"display-name": user.DisplayName,
+		})
 	}
 }
