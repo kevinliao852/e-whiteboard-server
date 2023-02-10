@@ -19,7 +19,7 @@ type WhiteboardController struct {
 
 func (wc *WhiteboardController) GetWhiteboardByUserId(c *gin.Context) {
 	var whiteboards []models.Whiteboard
-	userId, err := strconv.Atoi(c.DefaultQuery("userId", ""))
+	userId, err := strconv.Atoi(c.DefaultQuery("user-id", ""))
 
 	if err != nil {
 		c.String(http.StatusUnprocessableEntity, "")
