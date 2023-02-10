@@ -6,7 +6,7 @@ import (
 )
 
 type Whiteboard struct {
-	ID        uint
+	Id        uint
 	UserId    uint `json:"user_id" binding:"required"`
 	CreatedAt time.Time
 	UpdateAt  time.Time
