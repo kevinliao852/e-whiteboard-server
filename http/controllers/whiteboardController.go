@@ -28,10 +28,18 @@ func (wc *WhiteboardController) GetWhiteboardByUserId(c *gin.Context) {
 
 	err = wc.model.GetWhiteboardsByUserId(&whiteboards, uint(userId))
 
+	var whiteboardResponse []map[string]interface{}
+
+	for i := 0; i < len(whiteboards); i++ {
+		whiteboardResponse = append(whiteboardResponse, map[string]interface{}{
+			"id": whiteboards[i].Id,
+		})
+	}
+
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 	} else {
-		c.JSON(http.StatusOK, whiteboards)
+		c.JSON(http.StatusOK, whiteboardResponse)
 	}
 
 }
