@@ -6,7 +6,7 @@ import (
 )
 
 type User struct {
-	ID          uint
+	Id          uint
 	DisplayName string `json:"display_name"`
 	Email       string `json:"email" binding:"required" gorm:"unique"`
 	GoogleId    string `json:"google_id" binding:"required"`

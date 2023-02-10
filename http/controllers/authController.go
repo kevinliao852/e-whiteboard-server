@@ -40,7 +40,7 @@ func Login(id string) gin.HandlerFunc {
 		models.GetUserByGoogleId(&user, sub)
 
 		// If not, sign up for this user
-		if user.ID == 0 {
+		if user.Id == 0 {
 
 			err := models.CreateAUser(&models.User{
 				GoogleId:    sub,
