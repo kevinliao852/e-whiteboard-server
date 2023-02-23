@@ -8,6 +8,7 @@ import (
 type Whiteboard struct {
 	Id        uint
 	UserId    uint `json:"user_id" binding:"required"`
+	UserId    uint `json:"user-id" binding:"required"`
 	CreatedAt time.Time
 	UpdateAt  time.Time
 }
