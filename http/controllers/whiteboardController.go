@@ -28,7 +28,7 @@ func (wc *WhiteboardController) GetWhiteboardByUserId(c *gin.Context) {
 
 	err = wc.model.GetWhiteboardsByUserId(&whiteboards, uint(userId))
 
-	var whiteboardResponse []map[string]interface{}
+	whiteboardResponse := make([]map[string]interface{}, 0)
 
 	for i := 0; i < len(whiteboards); i++ {
 		whiteboardResponse = append(whiteboardResponse, map[string]interface{}{
