@@ -50,6 +50,7 @@ func (wc *WhiteboardController) CreateWhiteboard(c *gin.Context) {
 	err := c.BindJSON(&whiteboard)
 
 	if err != nil {
+		c.String(http.StatusBadRequest, "Not a valid JSON")
 		c.AbortWithStatus(http.StatusBadRequest)
 		log.Println(err)
 		return
@@ -58,7 +59,9 @@ func (wc *WhiteboardController) CreateWhiteboard(c *gin.Context) {
 	err = wc.model.CreateAWhiteboard(&whiteboard)
 
 	if err != nil {
+		c.String(http.StatusBadRequest, "Create whiteboard failed")
 		c.AbortWithStatus(http.StatusBadRequest)
+
 	} else {
 		c.JSON(http.StatusOK, whiteboard)
 	}
