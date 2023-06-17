@@ -39,6 +39,7 @@ func init() {
 
 	database.DB.AutoMigrate(&models.User{})
 	database.DB.AutoMigrate(&models.Whiteboard{})
+	database.DB.AutoMigrate(&models.WhiteboardCanvasData{})
 
 	log.Print("Database is connected")
 }

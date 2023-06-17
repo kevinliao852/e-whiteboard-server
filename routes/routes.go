@@ -35,6 +35,7 @@ func Handler() *gin.Engine {
 		v1.DELETE("/user/:name", controllers.DeleteAUser, middlewares.AuthRequired)
 		v1.GET("/whiteboards", wc.GetWhiteboardByUserId)
 		v1.POST("/whiteboards", wc.CreateWhiteboard)
+		v1.DELETE("/whiteboards/:id", wc.DeleteWhiteboard)
 	}
 
 	r.POST("/login", controllers.Login(os.Getenv("GOOGLE_CLIENT_ID")))

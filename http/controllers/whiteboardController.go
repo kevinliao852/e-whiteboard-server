@@ -63,3 +63,22 @@ func (wc *WhiteboardController) CreateWhiteboard(c *gin.Context) {
 		c.JSON(http.StatusOK, whiteboard)
 	}
 }
+
+func (wc *WhiteboardController) DeleteWhiteboard(c *gin.Context) {
+	var whiteboard models.Whiteboard
+
+	id, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		c.AbortWithStatus(http.StatusUnprocessableEntity)
+		return
+	}
+
+	err = wc.model.DeleteAWhiteboard(uint(id))
+
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+	} else {
+		c.JSON(http.StatusOK, whiteboard)
+	}
+}
