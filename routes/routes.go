@@ -43,7 +43,7 @@ func Handler() *gin.Engine {
 	wsGroup := r.Group("/ws")
 	{
 		wsGroup.GET("/chatting", controllers.WebsocketRoute())
-		wsGroup.GET("/drawing", controllers.WebsocketRoute())
+		wsGroup.GET("/drawing/:id", controllers.WebsocketRoute())
 	}
 
 	return r
