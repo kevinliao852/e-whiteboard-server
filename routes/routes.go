@@ -22,6 +22,8 @@ func Handler() *gin.Engine {
 	config.AllowCredentials = true
 
 	var wc controllers.WhiteboardController
+	cnt := 0
+	rc := controllers.RoomController{Count: &cnt}
 
 	r.Use(sessions.Sessions("whiteboardsession", store))
 	r.Use(middlewares.LoggerMiddleWare)
@@ -39,6 +41,7 @@ func Handler() *gin.Engine {
 	}
 
 	r.POST("/login", controllers.Login(os.Getenv("GOOGLE_CLIENT_ID")))
+	r.GET("/test", rc.GetCurrentRoomCount)
 
 	wsGroup := r.Group("/ws")
 	{
