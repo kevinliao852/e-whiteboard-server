@@ -3,6 +3,7 @@ package main
 import (
 	"app/database"
 	"app/models"
+	"app/pkg/config"
 	"app/routes"
 	"os"
 
@@ -14,8 +15,17 @@ import (
 
 func init() {
 	err := godotenv.Load()
+
 	if err != nil {
 		log.Fatal("Error loading .env file")
+	}
+
+	configManager := config.NewConfigManager([]string{"APP_HOST", "APP_PORT"})
+
+	err = configManager.CheckAndLoadConfig()
+
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 
