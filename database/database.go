@@ -6,26 +6,31 @@ import (
 
 var DB *gorm.DB
 
-type SQLiteCreator interface {
-	OpenGorm(dialector gorm.Dialector, config *gorm.Config) (db *gorm.DB, err error)
-	OpenSQLite(dsn string) gorm.Dialector
+type Database interface {
+}
+
+type DBCreator interface {
+	CreateDialector() gorm.Dialector
+	CreateOpenGorm() func(dialector gorm.Dialector, config *gorm.Config) (db *gorm.DB, err error)
 }
 
 type SQLiteCreate struct {
 	OpenSQLiteFunc func(dsn string) gorm.Dialector
 	OpenGormFunc   func(dialector gorm.Dialector, config *gorm.Config) (db *gorm.DB, err error)
+	Filename       string
 }
 
-func (sqlc *SQLiteCreate) OpenGorm(dialector gorm.Dialector, config *gorm.Config) (db *gorm.DB, err error) {
-	return sqlc.OpenGormFunc(dialector, config)
+func (sqlc *SQLiteCreate) CreateDialector() gorm.Dialector {
+	return sqlc.OpenSQLiteFunc(sqlc.Filename)
 }
 
-func (sqlc *SQLiteCreate) OpenSQLite(filename string) gorm.Dialector {
-	return sqlc.OpenSQLiteFunc(filename)
+func (sqlc *SQLiteCreate) CreateOpenGorm() func(dialector gorm.Dialector, config *gorm.Config) (db *gorm.DB, err error) {
+	return sqlc.OpenGormFunc
 }
 
-func Connect(filename string, createSQLiter SQLiteCreator) (*gorm.DB, error) {
-	db, err := createSQLiter.OpenGorm(createSQLiter.OpenSQLite(filename), &gorm.Config{})
+func Connect(creator DBCreator) (*gorm.DB, error) {
+	db, err := creator.CreateOpenGorm()(creator.CreateDialector(), &gorm.Config{})
+
 	if err != nil {
 		panic("failed to connect database")
 	}

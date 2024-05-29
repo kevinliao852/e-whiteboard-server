@@ -12,16 +12,23 @@ import (
 func TestConnect(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
-	var db *gorm.DB = &gorm.DB{}
+	var gormDB *gorm.DB = &gorm.DB{}
 	dialector := sqlite.Open("filename")
 
-	m := mock_database.NewMockSQLiteCreator(ctrl)
+	m := mock_database.NewMockDBCreator(ctrl)
 
-	m.EXPECT().OpenGorm(dialector, &gorm.Config{}).Return(db, nil)
-	m.EXPECT().OpenSQLite(gomock.Any()).Return(dialector)
+	// return a mock function
+	m.EXPECT().CreateOpenGorm().Return(
+		func(dialector gorm.Dialector, config *gorm.Config) (db *gorm.DB, err error) {
+			return gormDB, nil
+		},
+	)
+	m.EXPECT().CreateDialector().Return(dialector)
 
-	if _, err := Connect("filename", m); err != nil {
+	if db, err := Connect(m); err != nil {
 		t.Fatalf(err.Error())
+	} else {
+		t.Logf("Connected to database: %v", db)
 	}
 
 }

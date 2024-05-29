@@ -11,54 +11,76 @@ import (
 	gorm "gorm.io/gorm"
 )
 
-// MockSQLiteCreator is a mock of SQLiteCreator interface.
-type MockSQLiteCreator struct {
+// MockDatabase is a mock of Database interface.
+type MockDatabase struct {
 	ctrl     *gomock.Controller
-	recorder *MockSQLiteCreatorMockRecorder
+	recorder *MockDatabaseMockRecorder
 }
 
-// MockSQLiteCreatorMockRecorder is the mock recorder for MockSQLiteCreator.
-type MockSQLiteCreatorMockRecorder struct {
-	mock *MockSQLiteCreator
+// MockDatabaseMockRecorder is the mock recorder for MockDatabase.
+type MockDatabaseMockRecorder struct {
+	mock *MockDatabase
 }
 
-// NewMockSQLiteCreator creates a new mock instance.
-func NewMockSQLiteCreator(ctrl *gomock.Controller) *MockSQLiteCreator {
-	mock := &MockSQLiteCreator{ctrl: ctrl}
-	mock.recorder = &MockSQLiteCreatorMockRecorder{mock}
+// NewMockDatabase creates a new mock instance.
+func NewMockDatabase(ctrl *gomock.Controller) *MockDatabase {
+	mock := &MockDatabase{ctrl: ctrl}
+	mock.recorder = &MockDatabaseMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockSQLiteCreator) EXPECT() *MockSQLiteCreatorMockRecorder {
+func (m *MockDatabase) EXPECT() *MockDatabaseMockRecorder {
 	return m.recorder
 }
 
-// OpenGorm mocks base method.
-func (m *MockSQLiteCreator) OpenGorm(dialector gorm.Dialector, config *gorm.Config) (*gorm.DB, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OpenGorm", dialector, config)
-	ret0, _ := ret[0].(*gorm.DB)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+// MockDBCreator is a mock of DBCreator interface.
+type MockDBCreator struct {
+	ctrl     *gomock.Controller
+	recorder *MockDBCreatorMockRecorder
 }
 
-// OpenGorm indicates an expected call of OpenGorm.
-func (mr *MockSQLiteCreatorMockRecorder) OpenGorm(dialector, config interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenGorm", reflect.TypeOf((*MockSQLiteCreator)(nil).OpenGorm), dialector, config)
+// MockDBCreatorMockRecorder is the mock recorder for MockDBCreator.
+type MockDBCreatorMockRecorder struct {
+	mock *MockDBCreator
 }
 
-// OpenSQLite mocks base method.
-func (m *MockSQLiteCreator) OpenSQLite(dsn string) gorm.Dialector {
+// NewMockDBCreator creates a new mock instance.
+func NewMockDBCreator(ctrl *gomock.Controller) *MockDBCreator {
+	mock := &MockDBCreator{ctrl: ctrl}
+	mock.recorder = &MockDBCreatorMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockDBCreator) EXPECT() *MockDBCreatorMockRecorder {
+	return m.recorder
+}
+
+// CreateDialector mocks base method.
+func (m *MockDBCreator) CreateDialector() gorm.Dialector {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OpenSQLite", dsn)
+	ret := m.ctrl.Call(m, "CreateDialector")
 	ret0, _ := ret[0].(gorm.Dialector)
 	return ret0
 }
 
-// OpenSQLite indicates an expected call of OpenSQLite.
-func (mr *MockSQLiteCreatorMockRecorder) OpenSQLite(dsn interface{}) *gomock.Call {
+// CreateDialector indicates an expected call of CreateDialector.
+func (mr *MockDBCreatorMockRecorder) CreateDialector() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenSQLite", reflect.TypeOf((*MockSQLiteCreator)(nil).OpenSQLite), dsn)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateDialector", reflect.TypeOf((*MockDBCreator)(nil).CreateDialector))
+}
+
+// CreateOpenGorm mocks base method.
+func (m *MockDBCreator) CreateOpenGorm() func(gorm.Dialector, *gorm.Config) (*gorm.DB, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateOpenGorm")
+	ret0, _ := ret[0].(func(gorm.Dialector, *gorm.Config) (*gorm.DB, error))
+	return ret0
+}
+
+// CreateOpenGorm indicates an expected call of CreateOpenGorm.
+func (mr *MockDBCreatorMockRecorder) CreateOpenGorm() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOpenGorm", reflect.TypeOf((*MockDBCreator)(nil).CreateOpenGorm))
 }

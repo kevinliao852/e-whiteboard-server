@@ -35,13 +35,13 @@ func init() {
 }
 
 func init() {
-
 	sqlc := database.SQLiteCreate{
 		OpenSQLiteFunc: sqlite.Open,
 		OpenGormFunc:   gorm.Open,
+		Filename:       os.Getenv("DATABASE_PATH"),
 	}
 
-	database.DB, err = database.Connect(os.Getenv("DATABASE_PATH"), &sqlc)
+	database.DB, err = database.Connect(&sqlc)
 
 	if err != nil {
 		log.Fatal(err.Error())
