@@ -32,6 +32,8 @@ func init() {
 func init() {
 	log.SetLevel(log.DebugLevel)
 	log.SetFormatter(&log.JSONFormatter{})
+	log.Printf("Log level is %v", log.GetLevel())
+	log.Printf("Set log format to JSON")
 }
 
 func init() {

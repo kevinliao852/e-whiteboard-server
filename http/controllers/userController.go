@@ -5,20 +5,19 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
 func GetUsers(c *gin.Context) {
 
-	session := sessions.Default(c)
-	fmt.Println(session.Get("id"))
-	var user []models.User
-	err := models.GetAllUsers(&user)
+	var users []models.User
+	err := models.GetAllUsers(&users)
+	c.JSON(http.StatusOK, []interface{}{})
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 	} else {
-		c.JSON(http.StatusOK, user)
+
+		c.JSON(http.StatusOK, users)
 	}
 
 }

@@ -11,6 +11,7 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/joho/godotenv v1.3.0
 	github.com/sirupsen/logrus v1.9.0
+	github.com/stretchr/testify v1.7.0
 	google.golang.org/api v0.40.0
 	gorm.io/driver/sqlite v1.1.4
 	gorm.io/gorm v1.20.7
