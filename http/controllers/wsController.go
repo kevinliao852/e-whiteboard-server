@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"app/models"
@@ -41,18 +42,42 @@ func WebsocketRoute() gin.HandlerFunc {
 		currentRoom.Register <- c
 
 		for {
-			mt, message, err := c.ReadMessage()
+			mt, rawMessage, err := c.ReadMessage()
+
 			if err != nil {
 				log.Print("read:", err)
 				break
 			}
-			//log.Printf("recv: %s", message)
 
-			for client := range currentRoom.Clients {
-				// broadcast data to everyone
-				(*client).WriteMessage(mt, message)
-				channel <- message
+			var message wshub.Message
+			parseErr := json.Unmarshal(rawMessage, &message)
+
+			if parseErr != nil {
+				log.Println("Error parsing message", parseErr, string(rawMessage))
+				break
 			}
+
+			fmt.Println("Message scope: ", message.Scope, " data: ", message.Data)
+			fmt.Println(string(rawMessage), parseErr)
+
+			if message.Scope == string(wshub.ScopeTypeWhiteboard) {
+				for client := range currentRoom.Clients {
+					log.Println(currentRoom.Clients)
+
+					// TODO
+					// broadcast data to everyone
+					// client should receive data from other client
+					// with the whiteboard data
+					if client == c {
+						continue
+					}
+
+					client.WriteMessage(mt, rawMessage)
+					(*client).WriteMessage(mt, rawMessage)
+					channel <- rawMessage
+				}
+			}
+
 		}
 	}
 }
@@ -61,36 +86,50 @@ type StoreWhiteboardMessage struct {
 	RoomId string `json:"room_id"`
 }
 
-type Message struct {
+type WhiteboardMessage struct {
 	Start []uint `json:"start"`
 	End   []uint `json:"end"`
 }
 
 func (swm *StoreWhiteboardMessage) SaveMessage(message []byte) error {
 	// store message to db
-	// example msg {"start":[305,245],"end":[312,245]}
-	var parsedMsg Message
+	var parsedMsg wshub.Message
 	err := json.Unmarshal(message, &parsedMsg)
 
 	if err != nil {
-		log.Println("Error parsing message", err, string(message))
+		log.Println("[SaveMessage] Error parsing message", err, string(message))
 		return err
 	}
 
 	whiteboardId, err := strconv.ParseUint(swm.RoomId, 10, 32)
 
 	if err != nil {
-		log.Println("Error parsing room id ", err, swm.RoomId)
-		return err
+		return fmt.Errorf("[SaveMessage] Error parsing room id:%v, %+v", swm.RoomId, whiteboardId)
 	}
 
 	uintWhiteboardId := uint(whiteboardId)
 
+	fmt.Println(parsedMsg)
+
+	marshalWmd, err := json.Marshal(parsedMsg.Data)
+
+	if err != nil {
+		return fmt.Errorf("[SaveMessage] WhiteboardMessage marchal failed %+v", err)
+	}
+
+	var wmd WhiteboardMessage
+
+	err = json.Unmarshal(marshalWmd, &wmd)
+
+	if err != nil {
+		return fmt.Errorf("[SaveMessage] WhiteboardMessage Unmarshal failed %+v", err)
+	}
+
 	data := &models.WhiteboardCanvasData{
-		StartX:       parsedMsg.Start[0],
-		StartY:       parsedMsg.Start[1],
-		EndX:         parsedMsg.End[0],
-		EndY:         parsedMsg.End[1],
+		StartX:       wmd.Start[0],
+		StartY:       wmd.Start[1],
+		EndX:         wmd.End[0],
+		EndY:         wmd.End[1],
 		WhiteboardId: uintWhiteboardId,
 	}
 
@@ -102,6 +141,10 @@ func (swm *StoreWhiteboardMessage) SaveMessage(message []byte) error {
 	}
 
 	return nil
+}
+
+func initChat() {
+
 }
 
 func WhiteboardSaveWorker(roomId string, messageChannel chan []byte) {
