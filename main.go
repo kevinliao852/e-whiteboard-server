@@ -59,8 +59,9 @@ func init() {
 var err error
 
 func main() {
+	wc := routes.WithCORS()
 
-	r := routes.Handler()
+	r := routes.Handler(wc)
 	r.Run(os.Getenv("APP_HOST") + ":" + os.Getenv("APP_PORT"))
 
 }
