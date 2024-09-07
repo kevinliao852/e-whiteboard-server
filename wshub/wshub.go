@@ -8,9 +8,11 @@ import (
 )
 
 type Hub struct {
-	Upgrader *websocket.Upgrader
-	Clients  map[*websocket.Conn]bool
-	Register chan *websocket.Conn
+	Upgrader    *websocket.Upgrader
+	Clients     map[*websocket.Conn]bool
+	Register    chan *websocket.Conn
+	Boardcaster chan *websocket.Conn
+	Unregister  chan *websocket.Conn
 }
 
 func HubRun(h *Hub) {
@@ -18,6 +20,9 @@ func HubRun(h *Hub) {
 		select {
 		case client := <-h.Register:
 			h.Clients[client] = true
+			log.Println(h.Clients)
+		case client := <-h.Unregister:
+			delete(h.Clients, client)
 			log.Println(h.Clients)
 		}
 	}

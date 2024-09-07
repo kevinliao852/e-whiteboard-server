@@ -52,6 +52,11 @@ func WebsocketRoute() gin.HandlerFunc {
 			var message wshub.Message
 			parseErr := json.Unmarshal(rawMessage, &message)
 
+			switch message.Scope {
+			case string(wshub.ScopeTypeWhiteboard):
+				// TODO getWhiteboaryHistoryById
+			}
+
 			if parseErr != nil {
 				log.Println("Error parsing message", parseErr, string(rawMessage))
 				break
@@ -64,10 +69,6 @@ func WebsocketRoute() gin.HandlerFunc {
 				for client := range currentRoom.Clients {
 					log.Println(currentRoom.Clients)
 
-					// TODO
-					// broadcast data to everyone
-					// client should receive data from other client
-					// with the whiteboard data
 					if client == c {
 						continue
 					}
@@ -80,6 +81,17 @@ func WebsocketRoute() gin.HandlerFunc {
 
 		}
 	}
+}
+
+func parseMessage(rawMessage []byte) (interface{}, error) {
+
+	var message wshub.Message
+	parseErr := json.Unmarshal(rawMessage, &message)
+
+	if parseErr != nil {
+		log.Println("Error parsing message", parseErr, string(rawMessage))
+	}
+	return nil, nil
 }
 
 type StoreWhiteboardMessage struct {
@@ -141,10 +153,6 @@ func (swm *StoreWhiteboardMessage) SaveMessage(message []byte) error {
 	}
 
 	return nil
-}
-
-func initChat() {
-
 }
 
 func WhiteboardSaveWorker(roomId string, messageChannel chan []byte) {
