@@ -1,0 +1,33 @@
+name: Review
+on:
+  - push
+  - pull_request
+jobs:
+  source-inspection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out VCS repository
+        uses: actions/checkout@v2
+
+      - name: Set up Reviewdog
+        uses: reviewdog/action-setup@v1
+        with:
+          reviewdog_version: latest
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+
+      - name: Install golangci-lint
+        run: go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.26.0
+
+      - name: Ensure Go files satisfy "golangci-lint"
+        run: |
+          golangci-lint run --out-format=line-number ./... | \
+            reviewdog -f=golangci-lint -reporter=local -fail-on-error=true
+
+      - name: Confirm Go source code is formatted per "gofmt"
+        run: |
+          gofmt -s -d . | \
+            reviewdog -name="gofmt" -f=diff -f.diff.strip=0 -reporter=local -fail-on-error=true
