@@ -8,12 +8,12 @@ import (
 )
 
 type Room struct {
-	Upgrader    *websocket.Upgrader
-	RoomId      string
-	Clients     map[*websocket.Conn]bool
-	Broadcast   chan []byte
-	Register    chan *websocket.Conn
-	Unregister  chan *websocket.Conn
+	Upgrader   *websocket.Upgrader
+	RoomId     string
+	Clients    map[*websocket.Conn]bool
+	Broadcast  chan []byte
+	Register   chan *websocket.Conn
+	Unregister chan *websocket.Conn
 }
 
 func NewRoom(roomId string) *Room {
