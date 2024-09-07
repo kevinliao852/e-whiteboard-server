@@ -73,6 +73,9 @@ func main() {
 	wc := routes.WithCORS()
 
 	r := routes.Handler(wc)
-	r.Run(os.Getenv("APP_HOST") + ":" + os.Getenv("APP_PORT"))
+	err := r.Run(os.Getenv("APP_HOST") + ":" + os.Getenv("APP_PORT"))
 
+	if err != nil {
+		log.Fatal(err)
+	}
 }
