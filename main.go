@@ -49,9 +49,20 @@ func init() {
 		log.Fatal(err.Error())
 	}
 
-	database.DB.AutoMigrate(&models.User{})
-	database.DB.AutoMigrate(&models.Whiteboard{})
-	database.DB.AutoMigrate(&models.WhiteboardCanvasData{})
+	err = database.DB.AutoMigrate(&models.User{})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	err = database.DB.AutoMigrate(&models.Whiteboard{})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	err = database.DB.AutoMigrate(&models.WhiteboardCanvasData{})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	log.Print("Database is connected")
 }
