@@ -3,6 +3,7 @@ package wshub
 import (
 	"net/http"
 
+	"github.com/cockroachdb/errors"
 	"github.com/gorilla/websocket"
 )
 
@@ -32,7 +33,7 @@ func NewRoom(roomId string) *Room {
 	}
 }
 
-func RunRoom(room *Room) {
+func RunRoom(room *Room, errChan *chan error) {
 	for {
 		select {
 
@@ -45,7 +46,12 @@ func RunRoom(room *Room) {
 			}
 		case message := <-room.Broadcast:
 			for client := range room.Clients {
-				client.WriteMessage(websocket.TextMessage, message)
+				err := client.WriteMessage(websocket.TextMessage, message)
+
+				if err != nil {
+					*errChan <- errors.Wrap(err, "Error writing message")
+				}
+
 			}
 		}
 	}

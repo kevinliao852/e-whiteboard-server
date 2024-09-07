@@ -17,13 +17,23 @@ func WebsocketRoute() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
 		roomId := ctx.Param("id")
+		errChan := make(chan error)
 
 		if _, ok := rooms[roomId]; !ok {
 			room := wshub.NewRoom(roomId)
 			rooms[roomId] = room
-			go wshub.RunRoom(room)
+			go wshub.RunRoom(room, &errChan)
 			log.Println("Created new room: ", roomId)
 		}
+
+		go func() {
+			for {
+				select {
+				case err := <-errChan:
+					log.Error("Error: ", err)
+				}
+			}
+		}()
 
 		currentRoom := rooms[roomId]
 		c, err := currentRoom.Upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
