@@ -8,7 +8,7 @@ type Message struct {
 type ScopeType string
 
 const (
-	ScopeTypeWhiteboard ScopeType = "whiteboard"
-	ScopeTypeLobby      ScopeType = "lobby"
+	ScopeTypeWhiteboard       ScopeType = "whiteboard"
+	ScopeTypeLobby            ScopeType = "lobby"
 	ScopeTypeWhitboardHistory ScopeType = "whiteboard-history"
 )
