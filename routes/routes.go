@@ -27,7 +27,7 @@ type authMiddleware struct {
 }
 
 func (am *authMiddleware) apply(opt *options) {
-	am.AuthMiddleware = opt.AuthMiddleware
+	opt.AuthMiddleware = am.AuthMiddleware
 }
 
 func WithAuthMiddleware(m func(*gin.Context)) Option {
@@ -56,6 +56,7 @@ func Handler(opts ...Option) *gin.Engine {
 
 	if options.AuthMiddleware != nil {
 		currentAuthMiddleware = options.AuthMiddleware
+		log.Info("Custom AuthMiddleware is set")
 	}
 
 	r := gin.New()

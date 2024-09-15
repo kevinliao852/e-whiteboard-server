@@ -37,7 +37,12 @@ func Login(id string) gin.HandlerFunc {
 
 		// Check if database have this user's credential.
 		var user models.User
-		models.GetUserByGoogleId(&user, sub)
+		err := models.GetUserByGoogleId(&user, sub)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, map[string]string{"status": "auth failed"})
+			return
+		}
 
 		// If not, sign up for this user
 		if user.Id == 0 {
@@ -59,7 +64,13 @@ func Login(id string) gin.HandlerFunc {
 			session.Set("email", payload.Claims["email"])
 			session.Set("id", payload.Claims["aud"])
 			session.Set("exp", payload.Claims["exp"])
-			session.Save()
+			err = session.Save()
+
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, map[string]string{"status": "auth failed"})
+				return
+			}
+
 		}
 
 		c.JSON(http.StatusOK, gin.H{

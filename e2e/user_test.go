@@ -27,7 +27,15 @@ func TestUserCon(t *testing.T) {
 
 	database.DB, err = database.Connect(&sqlc)
 
-	database.DB.AutoMigrate(&models.User{})
+	if err != nil {
+		panic("failed to connect database")
+	}
+
+	err = database.DB.AutoMigrate(&models.User{})
+
+	if err != nil {
+		panic("failed to connect database")
+	}
 
 	assert.Nil(t, err)
 

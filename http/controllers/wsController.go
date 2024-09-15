@@ -17,13 +17,20 @@ func WebsocketRoute() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
 		roomId := ctx.Param("id")
+		errChan := make(chan error)
 
 		if _, ok := rooms[roomId]; !ok {
 			room := wshub.NewRoom(roomId)
 			rooms[roomId] = room
-			go wshub.RunRoom(room)
+			go wshub.RunRoom(room, &errChan)
 			log.Println("Created new room: ", roomId)
 		}
+
+		go func() {
+			for c := range errChan {
+				log.Println("Error saving message ", c)
+			}
+		}()
 
 		currentRoom := rooms[roomId]
 		c, err := currentRoom.Upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
@@ -73,8 +80,18 @@ func WebsocketRoute() gin.HandlerFunc {
 						continue
 					}
 
-					client.WriteMessage(mt, rawMessage)
-					(*client).WriteMessage(mt, rawMessage)
+					err = client.WriteMessage(mt, rawMessage)
+
+					if err != nil {
+						log.Println("Error writing message", err)
+					}
+
+					err = (*client).WriteMessage(mt, rawMessage)
+
+					if err != nil {
+						log.Println("Error writing message", err)
+					}
+
 					channel <- rawMessage
 				}
 			}
@@ -83,7 +100,7 @@ func WebsocketRoute() gin.HandlerFunc {
 	}
 }
 
-func parseMessage(rawMessage []byte) (interface{}, error) {
+func ParseMessage(rawMessage []byte) (interface{}, error) {
 
 	var message wshub.Message
 	parseErr := json.Unmarshal(rawMessage, &message)
@@ -162,7 +179,15 @@ func WhiteboardSaveWorker(roomId string, messageChannel chan []byte) {
 	var storeWhiteboardMessage StoreWhiteboardMessage
 	storeWhiteboardMessage.RoomId = roomId
 
+	errChan := make(chan error)
+
 	// use wshub.StoreMessageToDB to save message to db
-	wshub.StoreMessageToDB(messageChannel, &storeWhiteboardMessage)
+	wshub.StoreMessageToDB(messageChannel, &storeWhiteboardMessage, &errChan)
 	defer close(messageChannel)
+
+	go func() {
+		for c := range errChan {
+			log.Println("Error saving message ", c)
+		}
+	}()
 }

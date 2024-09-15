@@ -26,7 +26,7 @@ func TestConnect(t *testing.T) {
 	m.EXPECT().CreateDialector().Return(dialector)
 
 	if db, err := Connect(m); err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	} else {
 		t.Logf("Connected to database: %v", db)
 	}

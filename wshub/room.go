@@ -3,16 +3,17 @@ package wshub
 import (
 	"net/http"
 
+	"github.com/cockroachdb/errors"
 	"github.com/gorilla/websocket"
 )
 
 type Room struct {
-	Upgrader    *websocket.Upgrader
-	RoomId      string
-	Clients     map[*websocket.Conn]bool
-	Broadcast   chan []byte
-	Register    chan *websocket.Conn
-	Unregister  chan *websocket.Conn
+	Upgrader   *websocket.Upgrader
+	RoomId     string
+	Clients    map[*websocket.Conn]bool
+	Broadcast  chan []byte
+	Register   chan *websocket.Conn
+	Unregister chan *websocket.Conn
 }
 
 func NewRoom(roomId string) *Room {
@@ -32,7 +33,7 @@ func NewRoom(roomId string) *Room {
 	}
 }
 
-func RunRoom(room *Room) {
+func RunRoom(room *Room, errChan *chan error) {
 	for {
 		select {
 
@@ -45,7 +46,12 @@ func RunRoom(room *Room) {
 			}
 		case message := <-room.Broadcast:
 			for client := range room.Clients {
-				client.WriteMessage(websocket.TextMessage, message)
+				err := client.WriteMessage(websocket.TextMessage, message)
+
+				if err != nil {
+					*errChan <- errors.Wrap(err, "Error writing message")
+				}
+
 			}
 		}
 	}
@@ -55,11 +61,21 @@ type MessageSaver interface {
 	SaveMessage(message []byte) error
 }
 
-func StoreMessageToDB(message chan []byte, saver MessageSaver) {
+func StoreMessageToDB(message chan []byte, saver MessageSaver, errChan *chan error) {
+	done := make(chan struct{})
+	// TODO: graceful shutdown
+
 	for {
 		select {
 		case msg := <-message:
-			saver.SaveMessage(msg)
+			err := saver.SaveMessage(msg)
+
+			if err != nil {
+				*errChan <- errors.Wrap(err, "Error saving message")
+			}
+		case <-done:
+			return
 		}
 	}
+
 }
