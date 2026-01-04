@@ -1,6 +1,7 @@
 package wshub
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/cockroachdb/errors"
@@ -42,7 +43,9 @@ func RunRoom(room *Room, errChan *chan error) {
 		case client := <-room.Unregister:
 			if _, ok := room.Clients[client]; ok {
 				delete(room.Clients, client)
-				client.Close()
+				if err := client.Close(); err != nil {
+					fmt.Printf("failed to close client: %v\n", err)
+				}
 			}
 		case message := <-room.Broadcast:
 			for client := range room.Clients {

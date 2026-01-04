@@ -43,8 +43,11 @@ func WebsocketRoute() gin.HandlerFunc {
 		channel := make(chan []byte)
 
 		go WhiteboardSaveWorker(roomId, channel)
+		if err := c.Close(); err != nil {
+			log.Printf("failed to close: %v", err)
+		}
+
 		log.Println("Created new WhiteboardSaveWorker client", c.RemoteAddr().String())
-		defer c.Close()
 		defer delete(currentRoom.Clients, c)
 		currentRoom.Register <- c
 
@@ -100,7 +103,7 @@ func WebsocketRoute() gin.HandlerFunc {
 	}
 }
 
-func ParseMessage(rawMessage []byte) (interface{}, error) {
+func ParseMessage(rawMessage []byte) (any, error) {
 
 	var message wshub.Message
 	parseErr := json.Unmarshal(rawMessage, &message)
