@@ -9,7 +9,7 @@ A back-end server of Online whiteboard
 #### Setup Environment
 
 ```
-cp .env{.exmple,}
+cp .env{.example,}
 ```
 
 #### Run the Dev Server
