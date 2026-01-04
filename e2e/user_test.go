@@ -12,21 +12,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func TestUserCon(t *testing.T) {
-	sqlc := database.SQLiteCreate{
-		OpenSQLiteFunc: sqlite.Open,
-		OpenGormFunc:   gorm.Open,
-		Filename:       os.Getenv("DATABASE_PATH"),
-	}
-
 	var err error
+	gormConnector := database.NewGormConnector(os.Getenv("DATABASE_PATH"))
 
-	database.DB, err = database.Connect(&sqlc)
-
+	database.DB, err = gormConnector.Connect()
 	if err != nil {
 		panic("failed to connect database")
 	}

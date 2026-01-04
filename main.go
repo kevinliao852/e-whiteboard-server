@@ -9,26 +9,22 @@ import (
 
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
+// Load environment variables and check required config
 func init() {
-	err := godotenv.Load()
-
-	if err != nil {
+	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
 	configManager := config.NewConfigManager([]string{"APP_HOST", "APP_PORT"})
 
-	err = configManager.CheckAndLoadConfig()
-
-	if err != nil {
+	if err = configManager.CheckAndLoadConfig(); err != nil {
 		log.Fatal(err)
 	}
 }
 
+// Set log level and format
 func init() {
 	log.SetLevel(log.DebugLevel)
 	log.SetFormatter(&log.JSONFormatter{})
@@ -36,14 +32,13 @@ func init() {
 	log.Printf("Set log format to JSON")
 }
 
+// Connect to the database and run migrations
 func init() {
-	sqlc := database.SQLiteCreate{
-		OpenSQLiteFunc: sqlite.Open,
-		OpenGormFunc:   gorm.Open,
-		Filename:       os.Getenv("DATABASE_PATH"),
+	gormConector := database.NewGormConnector(os.Getenv("DATABASE_PATH"))
+	database.DB, err = gormConector.Connect()
+	if err != nil {
+		log.Fatal(err.Error())
 	}
-
-	database.DB, err = database.Connect(&sqlc)
 
 	if err != nil {
 		log.Fatal(err.Error())
