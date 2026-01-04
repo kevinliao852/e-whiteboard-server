@@ -22,7 +22,7 @@ func WebsocketRoute() gin.HandlerFunc {
 		if _, ok := rooms[roomId]; !ok {
 			room := wshub.NewRoom(roomId)
 			rooms[roomId] = room
-			go wshub.RunRoom(room, &errChan)
+			go room.Run(&errChan)
 			log.Println("Created new room: ", roomId)
 		}
 

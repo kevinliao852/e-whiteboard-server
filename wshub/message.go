@@ -1,8 +1,8 @@
 package wshub
 
 type Message struct {
-	Scope string      `json:"scope"`
-	Data  interface{} `json:"data"`
+	Scope string `json:"scope"`
+	Data  any    `json:"data"`
 }
 
 type ScopeType string

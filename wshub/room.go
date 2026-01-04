@@ -8,6 +8,9 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+type RoomActionChannel = chan *websocket.Conn
+
+// Room represents a chat room that manages WebSocket clients and message broadcasting.
 type Room struct {
 	Upgrader   *websocket.Upgrader
 	RoomId     string
@@ -17,7 +20,8 @@ type Room struct {
 	Unregister chan *websocket.Conn
 }
 
-func NewRoom(roomId string) *Room {
+// NewRoom creates and returns a new Room instance.
+func NewRoom(roomID string) *Room {
 	return &Room{
 		Upgrader: &websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
@@ -26,35 +30,34 @@ func NewRoom(roomId string) *Room {
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
 		},
-		RoomId:     roomId,
+		RoomId:     roomID,
 		Broadcast:  make(chan []byte),
-		Register:   make(chan *websocket.Conn),
-		Unregister: make(chan *websocket.Conn),
+		Register:   make(RoomActionChannel),
+		Unregister: make(RoomActionChannel),
 		Clients:    make(map[*websocket.Conn]bool),
 	}
 }
 
-func RunRoom(room *Room, errChan *chan error) {
+// Run starts the main loop for the Room to handle client registration, unregistration, and message broadcasting.
+func (r *Room) Run(errChan *chan error) {
 	for {
 		select {
-
-		case client := <-room.Register:
-			room.Clients[client] = true
-		case client := <-room.Unregister:
-			if _, ok := room.Clients[client]; ok {
-				delete(room.Clients, client)
+		case client := <-r.Register:
+			r.Clients[client] = true
+		case client := <-r.Unregister:
+			if _, ok := r.Clients[client]; ok {
+				delete(r.Clients, client)
 				if err := client.Close(); err != nil {
 					fmt.Printf("failed to close client: %v\n", err)
 				}
 			}
-		case message := <-room.Broadcast:
-			for client := range room.Clients {
+		case message := <-r.Broadcast:
+			for client := range r.Clients {
 				err := client.WriteMessage(websocket.TextMessage, message)
 
 				if err != nil {
 					*errChan <- errors.Wrap(err, "Error writing message")
 				}
-
 			}
 		}
 	}
