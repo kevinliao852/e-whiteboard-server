@@ -1,9 +1,11 @@
 package controllers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"sync"
 
 	"app/models"
 	"app/wshub"
@@ -12,98 +14,72 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// WebsocketRoute handles WebSocket connections for a specific room.
+// After upgrading the HTTP connection to a WebSocket, it manages client registration,
 func WebsocketRoute() gin.HandlerFunc {
-	var rooms = make(map[string]*wshub.Room)
+	var rooms = sync.Map{}
+	roomCtx := context.Background()
+
 	return func(ctx *gin.Context) {
-
-		roomId := ctx.Param("id")
-		errChan := make(chan error)
-
-		if _, ok := rooms[roomId]; !ok {
-			room := wshub.NewRoom(roomId)
-			rooms[roomId] = room
-			go room.Run(&errChan)
-			log.Println("Created new room: ", roomId)
-		}
-
-		go func() {
-			for c := range errChan {
-				log.Println("Error saving message ", c)
-			}
-		}()
-
-		currentRoom := rooms[roomId]
-		c, err := currentRoom.Upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
-
+		id := ctx.Param("id")
+		currentRoom, err := createRoom(roomCtx, &rooms, id)
 		if err != nil {
-			log.Print("upgrade error:", err)
+			log.Printf("failed to create or load room: %v", err)
 			return
 		}
 
-		channel := make(chan []byte)
-
-		go WhiteboardSaveWorker(roomId, channel)
-		if err := c.Close(); err != nil {
-			log.Printf("failed to close: %v", err)
+		participant, err := createParticipant(ctx, currentRoom)
+		if err != nil {
+			log.Printf("failed to create new participant: %v", err)
+			return
 		}
 
-		log.Println("Created new WhiteboardSaveWorker client", c.RemoteAddr().String())
-		defer delete(currentRoom.Clients, c)
-		currentRoom.Register <- c
+		currentRoom.Register <- participant
+		defer func() {
+			currentRoom.Unregister <- participant
+			_ = participant.Close()
+		}()
 
-		for {
-			mt, rawMessage, err := c.ReadMessage()
-
-			if err != nil {
-				log.Print("read:", err)
-				break
-			}
-
-			var message wshub.Message
-			parseErr := json.Unmarshal(rawMessage, &message)
-
-			switch message.Scope {
-			case string(wshub.ScopeTypeWhiteboard):
-				// TODO getWhiteboaryHistoryById
-			}
-
-			if parseErr != nil {
-				log.Println("Error parsing message", parseErr, string(rawMessage))
-				break
-			}
-
-			fmt.Println("Message scope: ", message.Scope, " data: ", message.Data)
-			fmt.Println(string(rawMessage), parseErr)
-
-			if message.Scope == string(wshub.ScopeTypeWhiteboard) {
-				for client := range currentRoom.Clients {
-					log.Println(currentRoom.Clients)
-
-					if client == c {
-						continue
-					}
-
-					err = client.WriteMessage(mt, rawMessage)
-
-					if err != nil {
-						log.Println("Error writing message", err)
-					}
-
-					err = (*client).WriteMessage(mt, rawMessage)
-
-					if err != nil {
-						log.Println("Error writing message", err)
-					}
-
-					channel <- rawMessage
-				}
-			}
-
-		}
+		participant.ReadMessage(ctx, currentRoom.Broadcast)
 	}
 }
 
-func ParseMessage(rawMessage []byte) (any, error) {
+func createParticipant(
+	ctx *gin.Context,
+	room *wshub.Room,
+) (*wshub.Participant, error) {
+
+	hub := wshub.NewWSHub()
+	client, err := hub.NewClient(ctx.Writer, ctx.Request)
+	if err != nil {
+		return nil, err
+	}
+	participant := wshub.NewParticipant(0, &client)
+
+	return participant, nil
+}
+
+func createRoom(ctx context.Context, rooms *sync.Map, id string) (*wshub.Room, error) {
+	newRoom := wshub.NewRoom(id)
+	actual, loaded := rooms.LoadOrStore(id, newRoom)
+
+	r, ok := actual.(*wshub.Room)
+	if !ok {
+		return nil, fmt.Errorf("invalid room type for id=%s", id)
+	}
+
+	if !loaded {
+		go func() {
+			r.Run(ctx)
+			rooms.Delete(id)
+		}()
+		log.Printf("Created and started new room with id=%s", id)
+	}
+
+	return r, nil
+}
+
+func ParseMessage(rawMessage []byte) (wshub.Message, error) {
 
 	var message wshub.Message
 	parseErr := json.Unmarshal(rawMessage, &message)
@@ -111,7 +87,7 @@ func ParseMessage(rawMessage []byte) (any, error) {
 	if parseErr != nil {
 		log.Println("Error parsing message", parseErr, string(rawMessage))
 	}
-	return nil, nil
+	return message, nil
 }
 
 type StoreWhiteboardMessage struct {
@@ -119,55 +95,35 @@ type StoreWhiteboardMessage struct {
 }
 
 type WhiteboardMessage struct {
-	Start []uint `json:"start"`
-	End   []uint `json:"end"`
+	Start [2]uint `json:"start"`
+	End   [2]uint `json:"end"`
 }
 
+// SaveMessage saves a whiteboard message to the database.
 func (swm *StoreWhiteboardMessage) SaveMessage(message []byte) error {
-	// store message to db
 	var parsedMsg wshub.Message
-	err := json.Unmarshal(message, &parsedMsg)
-
-	if err != nil {
+	if err := json.Unmarshal(message, &parsedMsg); err != nil {
 		log.Println("[SaveMessage] Error parsing message", err, string(message))
 		return err
 	}
 
 	whiteboardId, err := strconv.ParseUint(swm.RoomId, 10, 32)
-
 	if err != nil {
 		return fmt.Errorf("[SaveMessage] Error parsing room id:%v, %+v", swm.RoomId, whiteboardId)
 	}
 
-	uintWhiteboardId := uint(whiteboardId)
-
-	fmt.Println(parsedMsg)
-
-	marshalWmd, err := json.Marshal(parsedMsg.Data)
-
-	if err != nil {
-		return fmt.Errorf("[SaveMessage] WhiteboardMessage marchal failed %+v", err)
-	}
-
 	var wmd WhiteboardMessage
-
-	err = json.Unmarshal(marshalWmd, &wmd)
-
-	if err != nil {
+	if err = json.Unmarshal(message, &wmd); err != nil {
 		return fmt.Errorf("[SaveMessage] WhiteboardMessage Unmarshal failed %+v", err)
 	}
 
-	data := &models.WhiteboardCanvasData{
+	if err = models.CreateAWhiteboardCanvasData(&models.WhiteboardCanvasData{
 		StartX:       wmd.Start[0],
 		StartY:       wmd.Start[1],
 		EndX:         wmd.End[0],
 		EndY:         wmd.End[1],
-		WhiteboardId: uintWhiteboardId,
-	}
-
-	err = models.CreateAWhiteboardCanvasData(data)
-
-	if err != nil {
+		WhiteboardId: uint(whiteboardId),
+	}); err != nil {
 		log.Println("Error saving message ", err)
 		return err
 	}
@@ -175,22 +131,24 @@ func (swm *StoreWhiteboardMessage) SaveMessage(message []byte) error {
 	return nil
 }
 
-func WhiteboardSaveWorker(roomId string, messageChannel chan []byte) {
-	// save message to db
+func NewWhiteboardSaveWorker(roomId string) chan []byte {
+	messageChannel := make(chan []byte, 100)
 
-	// store whiteboard message
 	var storeWhiteboardMessage StoreWhiteboardMessage
 	storeWhiteboardMessage.RoomId = roomId
 
 	errChan := make(chan error)
 
 	// use wshub.StoreMessageToDB to save message to db
-	wshub.StoreMessageToDB(messageChannel, &storeWhiteboardMessage, &errChan)
-	defer close(messageChannel)
+	wshub.StartMessagePersistenceWorker(
+		context.Background(),
+		messageChannel, &storeWhiteboardMessage, &errChan)
 
 	go func() {
 		for c := range errChan {
 			log.Println("Error saving message ", c)
 		}
 	}()
+
+	return messageChannel
 }

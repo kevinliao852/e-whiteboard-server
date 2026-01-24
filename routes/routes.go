@@ -45,7 +45,6 @@ func WithCORS() corsOption {
 }
 
 func Handler(opts ...Option) *gin.Engine {
-
 	options := options{}
 
 	for _, o := range opts {
@@ -67,11 +66,9 @@ func Handler(opts ...Option) *gin.Engine {
 		config.AllowOrigins = []string{os.Getenv("HOST_AllOWORIGINS")}
 		config.AllowHeaders = []string{os.Getenv("HOST_AllOWHEADERS")}
 		config.AllowCredentials = true
-		r.Use(cors.New(config))
 
+		r.Use(cors.New(config))
 		log.Info("CORS is activated")
-	} else {
-		log.Info("CORS is not activated")
 	}
 
 	var wc controllers.WhiteboardController
@@ -82,24 +79,28 @@ func Handler(opts ...Option) *gin.Engine {
 	r.Use(middlewares.LoggerMiddleWare)
 
 	v1 := r.Group("/v1")
-	{
-		v1.GET("/user/:id", controllers.GetUser, currentAuthMiddleware)
-		v1.GET("/user", controllers.GetUsers, currentAuthMiddleware)
-		v1.POST("/user", controllers.Register)
-		v1.DELETE("/user/:name", controllers.DeleteAUser, currentAuthMiddleware)
-		v1.GET("/whiteboards", wc.GetWhiteboardByUserId)
-		v1.POST("/whiteboards", wc.CreateWhiteboard)
-		v1.DELETE("/whiteboards/:id", wc.DeleteWhiteboard)
-	}
 
+	// user routes
+	v1.GET("/user/:id", controllers.GetUser, currentAuthMiddleware)
+	v1.GET("/user", controllers.GetUsers, currentAuthMiddleware)
+	v1.POST("/user", controllers.Register)
+	v1.DELETE("/user/:name", controllers.DeleteAUser, currentAuthMiddleware)
+
+	// whiteboard routes
+	v1.GET("/whiteboards", wc.GetWhiteboardByUserId)
+	v1.POST("/whiteboards", wc.CreateWhiteboard)
+	v1.DELETE("/whiteboards/:id", wc.DeleteWhiteboard)
+
+	// auth routes
 	r.POST("/login", controllers.Login(os.Getenv("GOOGLE_CLIENT_ID")))
+
+	// test routes
 	r.GET("/test", rc.GetCurrentRoomCount)
 
+	// WebSocket routes
 	wsGroup := r.Group("/ws")
-	{
-		wsGroup.GET("/chatting", controllers.WebsocketRoute())
-		wsGroup.GET("/drawing/:id", controllers.WebsocketRoute())
-	}
+	wsGroup.GET("/chatting", controllers.WebsocketRoute())
+	wsGroup.GET("/drawing/:id", controllers.WebsocketRoute())
 
 	return r
 }

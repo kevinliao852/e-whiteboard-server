@@ -9,7 +9,7 @@ type RoomController struct {
 }
 
 func (rc *RoomController) GetCurrentRoomCount(ctx *gin.Context) {
-	ctx.JSON(200, interface{}(struct {
+	ctx.JSON(200, any(struct {
 		Count int `json:"count"`
 	}{Count: *rc.Count}))
 }
