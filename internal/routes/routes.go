@@ -69,8 +69,8 @@ func Handler(opts ...Option) *gin.Engine {
 
 	if options.UseCORS {
 		config := cors.DefaultConfig()
-		config.AllowOrigins = []string{os.Getenv("HOST_AllOWORIGINS")}
-		config.AllowHeaders = []string{os.Getenv("HOST_AllOWHEADERS")}
+		config.AllowOrigins = []string{os.Getenv("HOST_AllOW_ORIGINS")}
+		config.AllowHeaders = []string{os.Getenv("HOST_AllOW_HEADERS")}
 		config.AllowCredentials = true
 
 		r.Use(cors.New(config))
