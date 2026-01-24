@@ -3,6 +3,3 @@ dev:
 
 test:
 	go test -v ./...
-
-e2e-test:
-	go test -v ./e2e/...
