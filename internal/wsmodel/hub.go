@@ -1,4 +1,4 @@
-package wshub
+package wsmodel
 
 import (
 	"net/http"

@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/kevinliao852/e-whiteboard-server/internal/model"
-	"github.com/kevinliao852/e-whiteboard-server/internal/wshub"
+	"github.com/kevinliao852/e-whiteboard-server/internal/wsmodel"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -46,24 +46,24 @@ func WebsocketRoute() gin.HandlerFunc {
 
 func createParticipant(
 	ctx *gin.Context,
-	room *wshub.Room,
-) (*wshub.Participant, error) {
+	room *wsmodel.Room,
+) (*wsmodel.Participant, error) {
 
-	hub := wshub.NewWSHub()
+	hub := wsmodel.NewWSHub()
 	client, err := hub.NewClient(ctx.Writer, ctx.Request)
 	if err != nil {
 		return nil, err
 	}
-	participant := wshub.NewParticipant(0, &client)
+	participant := wsmodel.NewParticipant(0, &client)
 
 	return participant, nil
 }
 
-func createRoom(ctx context.Context, rooms *sync.Map, id string) (*wshub.Room, error) {
-	newRoom := wshub.NewRoom(id)
+func createRoom(ctx context.Context, rooms *sync.Map, id string) (*wsmodel.Room, error) {
+	newRoom := wsmodel.NewRoom(id)
 	actual, loaded := rooms.LoadOrStore(id, newRoom)
 
-	r, ok := actual.(*wshub.Room)
+	r, ok := actual.(*wsmodel.Room)
 	if !ok {
 		return nil, fmt.Errorf("invalid room type for id=%s", id)
 	}
@@ -79,9 +79,9 @@ func createRoom(ctx context.Context, rooms *sync.Map, id string) (*wshub.Room, e
 	return r, nil
 }
 
-func ParseMessage(rawMessage []byte) (wshub.Message, error) {
+func ParseMessage(rawMessage []byte) (wsmodel.Message, error) {
 
-	var message wshub.Message
+	var message wsmodel.Message
 	parseErr := json.Unmarshal(rawMessage, &message)
 
 	if parseErr != nil {
@@ -101,7 +101,7 @@ type WhiteboardMessage struct {
 
 // SaveMessage saves a whiteboard message to the database.
 func (swm *StoreWhiteboardMessage) SaveMessage(message []byte) error {
-	var parsedMsg wshub.Message
+	var parsedMsg wsmodel.Message
 	if err := json.Unmarshal(message, &parsedMsg); err != nil {
 		log.Println("[SaveMessage] Error parsing message", err, string(message))
 		return err
@@ -140,7 +140,7 @@ func NewWhiteboardSaveWorker(roomId string) chan []byte {
 	errChan := make(chan error)
 
 	// use wshub.StoreMessageToDB to save message to db
-	wshub.StartMessagePersistenceWorker(
+	wsmodel.StartMessagePersistenceWorker(
 		context.Background(),
 		messageChannel, &storeWhiteboardMessage, &errChan)
 
