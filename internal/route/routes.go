@@ -6,7 +6,7 @@ import (
 
 	"github.com/kevinliao852/e-whiteboard-server/internal/http/controllers"
 	"github.com/kevinliao852/e-whiteboard-server/internal/http/middlewares"
-	"github.com/kevinliao852/e-whiteboard-server/internal/models"
+	"github.com/kevinliao852/e-whiteboard-server/internal/model"
 	"github.com/kevinliao852/e-whiteboard-server/internal/service"
 
 	"github.com/gin-contrib/cors"
@@ -47,11 +47,11 @@ func Handler(opts ...Option) *gin.Engine {
 	}
 
 	whiteboardController := controllers.NewWhiteboardController(&service.WhiteboardSVC{
-		Model: &models.Whiteboard{}})
+		Model: &model.Whiteboard{}})
 	userController := controllers.NewUserController(&service.UserSVC{
-		Model: &models.User{}})
+		Model: &model.User{}})
 	authController := controllers.NewAuthController(&service.UserSVC{
-		Model: &models.User{}})
+		Model: &model.User{}})
 
 	v1 := r.Group("/v1")
 

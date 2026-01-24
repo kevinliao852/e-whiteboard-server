@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/kevinliao852/e-whiteboard-server/internal/models"
+	"github.com/kevinliao852/e-whiteboard-server/internal/model"
 	"github.com/kevinliao852/e-whiteboard-server/internal/wshub"
 
 	"github.com/gin-gonic/gin"
@@ -117,7 +117,7 @@ func (swm *StoreWhiteboardMessage) SaveMessage(message []byte) error {
 		return fmt.Errorf("[SaveMessage] WhiteboardMessage Unmarshal failed %+v", err)
 	}
 
-	if err = models.Create(&models.WhiteboardCanvasData{
+	if err = model.Create(&model.WhiteboardCanvasData{
 		StartX:       wmd.Start[0],
 		StartY:       wmd.Start[1],
 		EndX:         wmd.End[0],
