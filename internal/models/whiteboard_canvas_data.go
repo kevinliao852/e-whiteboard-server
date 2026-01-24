@@ -1,7 +1,7 @@
 package models
 
 import (
-	"app/database"
+	"github.com/kevinliao852/e-whiteboard-server/internal/database"
 	"time"
 )
 

@@ -1,9 +1,10 @@
 package routes
 
 import (
-	"app/http/controllers"
-	"app/http/middlewares"
 	"os"
+
+	"github.com/kevinliao852/e-whiteboard-server/internal/http/controllers"
+	"github.com/kevinliao852/e-whiteboard-server/internal/http/middlewares"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"

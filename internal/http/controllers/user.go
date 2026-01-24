@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"app/models"
+	"github.com/kevinliao852/e-whiteboard-server/internal/models"
 	"fmt"
 	"net/http"
 

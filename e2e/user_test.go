@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"app/database"
-	"app/models"
-	"app/routes"
+	"github.com/kevinliao852/e-whiteboard-server/internal/database"
+	"github.com/kevinliao852/e-whiteboard-server/internal/models"
+	"github.com/kevinliao852/e-whiteboard-server/internal/routes"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"

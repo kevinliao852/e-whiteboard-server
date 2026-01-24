@@ -1,8 +1,9 @@
 package models
 
 import (
-	"app/database"
 	"time"
+
+	"github.com/kevinliao852/e-whiteboard-server/internal/database"
 )
 
 // Whiteboard represents the whiteboard model in the database.

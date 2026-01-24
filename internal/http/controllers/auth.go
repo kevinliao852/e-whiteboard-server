@@ -1,10 +1,11 @@
 package controllers
 
 import (
-	"app/models"
 	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/kevinliao852/e-whiteboard-server/internal/models"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"

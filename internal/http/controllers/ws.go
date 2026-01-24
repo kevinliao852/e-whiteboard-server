@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"sync"
 
-	"app/models"
-	"app/wshub"
+	"github.com/kevinliao852/e-whiteboard-server/internal/models"
+	"github.com/kevinliao852/e-whiteboard-server/internal/wshub"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"

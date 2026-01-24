@@ -1,10 +1,11 @@
 package controllers
 
 import (
-	"app/models"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/kevinliao852/e-whiteboard-server/internal/models"
 
 	"github.com/gin-gonic/gin"
 )

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"app/database"
+	"github.com/kevinliao852/e-whiteboard-server/internal/database"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"gorm.io/driver/mysql"

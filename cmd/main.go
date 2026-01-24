@@ -1,11 +1,12 @@
 package main
 
 import (
-	"app/database"
-	"app/models"
-	"app/pkg/config"
-	"app/routes"
 	"os"
+
+	"github.com/kevinliao852/e-whiteboard-server/internal/database"
+	"github.com/kevinliao852/e-whiteboard-server/internal/models"
+	"github.com/kevinliao852/e-whiteboard-server/internal/routes"
+	"github.com/kevinliao852/e-whiteboard-server/pkg/config"
 
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
