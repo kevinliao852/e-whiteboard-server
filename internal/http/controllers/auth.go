@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/kevinliao852/e-whiteboard-server/internal/core"
-	"github.com/kevinliao852/e-whiteboard-server/internal/service"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -15,7 +14,13 @@ import (
 )
 
 type AuthController struct {
-	service *service.UserService
+	service core.UserService
+}
+
+func NewAuthController(svc core.UserService) *AuthController {
+	return &AuthController{
+		service: svc,
+	}
 }
 
 func (ac AuthController) Login(id string) gin.HandlerFunc {

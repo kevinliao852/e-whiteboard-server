@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/kevinliao852/e-whiteboard-server/internal/core"
-	"github.com/kevinliao852/e-whiteboard-server/internal/service"
 
 	"github.com/go-playground/validator/v10"
 
@@ -15,7 +14,13 @@ import (
 var validate = validator.New()
 
 type WhiteboardController struct {
-	service service.WhiteboardService
+	service core.WhiteboardService
+}
+
+func NewWhiteboardController(svc core.WhiteboardService) *WhiteboardController {
+	return &WhiteboardController{
+		service: svc,
+	}
 }
 
 type GetWhiteboardByUserQuery struct {

@@ -5,6 +5,8 @@ import (
 
 	"github.com/kevinliao852/e-whiteboard-server/internal/http/controllers"
 	"github.com/kevinliao852/e-whiteboard-server/internal/http/middlewares"
+	"github.com/kevinliao852/e-whiteboard-server/internal/models"
+	"github.com/kevinliao852/e-whiteboard-server/internal/service"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
@@ -62,6 +64,9 @@ func Handler(opts ...Option) *gin.Engine {
 	r := gin.New()
 	store := cookie.NewStore([]byte("secret"))
 
+	r.Use(sessions.Sessions("whiteboardsession", store))
+	r.Use(middlewares.LoggerMiddleWare)
+
 	if options.UseCORS {
 		config := cors.DefaultConfig()
 		config.AllowOrigins = []string{os.Getenv("HOST_AllOWORIGINS")}
@@ -72,12 +77,12 @@ func Handler(opts ...Option) *gin.Engine {
 		log.Info("CORS is activated")
 	}
 
-	var wc controllers.WhiteboardController
-	var userController controllers.UserController
-	var authController controllers.AuthController
-
-	r.Use(sessions.Sessions("whiteboardsession", store))
-	r.Use(middlewares.LoggerMiddleWare)
+	whiteboardController := controllers.NewWhiteboardController(&service.WhiteboardSVC{
+		Model: &models.Whiteboard{}})
+	userController := controllers.NewUserController(&service.UserSVC{
+		Model: &models.User{}})
+	authController := controllers.NewAuthController(&service.UserSVC{
+		Model: &models.User{}})
 
 	v1 := r.Group("/v1")
 
@@ -85,9 +90,9 @@ func Handler(opts ...Option) *gin.Engine {
 	v1.GET("/user/:id", userController.GetUser, currentAuthMiddleware)
 
 	// whiteboard routes
-	v1.GET("/whiteboards", wc.GetWhiteboardByUserId)
-	v1.POST("/whiteboards", wc.CreateWhiteboard)
-	v1.DELETE("/whiteboards/:id", wc.DeleteWhiteboard)
+	v1.GET("/whiteboards", whiteboardController.GetWhiteboardByUserId)
+	v1.POST("/whiteboards", whiteboardController.CreateWhiteboard)
+	v1.DELETE("/whiteboards/:id", whiteboardController.DeleteWhiteboard)
 
 	// auth routes
 	r.POST("/login", authController.Login(os.Getenv("GOOGLE_CLIENT_ID")))

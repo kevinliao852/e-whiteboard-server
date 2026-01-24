@@ -2,18 +2,18 @@ package service
 
 import "github.com/kevinliao852/e-whiteboard-server/internal/core"
 
-type UserService struct {
-	model core.UserModel
+type UserSVC struct {
+	Model core.UserModel
 }
 
-func (svc *UserService) GetUser(id string) (*core.User, error) {
-	return svc.model.GetById(id)
+func (svc *UserSVC) GetUser(id string) (*core.User, error) {
+	return svc.Model.GetById(id)
 }
 
-func (svc *UserService) Register(user *core.User) error {
-	return svc.model.Create(user)
+func (svc *UserSVC) Register(user *core.User) error {
+	return svc.Model.Create(user)
 }
 
-func (svc *UserService) GetUserByGoogleId(gid string) (*core.User, error) {
-	return svc.model.GetByGoogleId(gid)
+func (svc *UserSVC) GetUserByGoogleId(gid string) (*core.User, error) {
+	return svc.Model.GetByGoogleId(gid)
 }

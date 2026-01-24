@@ -15,3 +15,9 @@ type WhiteboardModel interface {
 	Delete(id uint) error
 	GetByUserId(userId uint) ([]*Whiteboard, error)
 }
+
+type WhiteboardService interface {
+	CreateWhiteboard(wb Whiteboard) (*Whiteboard, error)
+	DeleteWhiteboard(id uint) error
+	GetUserWhiteboards(userId uint) ([]*Whiteboard, error)
+}

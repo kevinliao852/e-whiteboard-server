@@ -16,3 +16,9 @@ type UserModel interface {
 	GetById(id string) (*User, error)
 	GetByGoogleId(gid string) (*User, error)
 }
+
+type UserService interface {
+	GetUser(id string) (*User, error)
+	Register(user *User) error
+	GetUserByGoogleId(gid string) (*User, error)
+}

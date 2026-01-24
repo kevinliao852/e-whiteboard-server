@@ -3,13 +3,18 @@ package controllers
 import (
 	"net/http"
 
-	"github.com/kevinliao852/e-whiteboard-server/internal/service"
-
 	"github.com/gin-gonic/gin"
+	"github.com/kevinliao852/e-whiteboard-server/internal/core"
 )
 
 type UserController struct {
-	service service.UserService
+	service core.UserService
+}
+
+func NewUserController(svc core.UserService) *UserController {
+	return &UserController{
+		service: svc,
+	}
 }
 
 func (ctrl *UserController) GetUser(c *gin.Context) {
