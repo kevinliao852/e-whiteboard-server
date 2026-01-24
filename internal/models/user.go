@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	"github.com/kevinliao852/e-whiteboard-server/internal/core"
 	"github.com/kevinliao852/e-whiteboard-server/internal/database"
 )
 
@@ -15,43 +16,45 @@ type User struct {
 	UpdateAt    time.Time
 }
 
-func CreateAUser(user *User) error {
+var _ core.UserModel = &User{}
+
+// Create implements [core.UserModel].
+func (u *User) Create(user *core.User) error {
 	if err := database.DB.Create(user).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func GetAllUsers(user *[]User) error {
-	if err := database.DB.Find(user).Error; err != nil {
-
-		return err
+// GetByGoogleId implements [core.UserModel].
+func (u *User) GetByGoogleId(id string) (*core.User, error) {
+	var user User
+	if err := database.DB.First(&user, "id = ?", id).Error; err != nil {
+		return nil, err
 	}
-	return nil
+	return &core.User{
+		ID:          int(user.Id),
+		DisplayName: user.DisplayName,
+		Email:       user.Email,
+		GoogleID:    user.GoogleId,
+		CreateAt:    user.CreateAt,
+		UpdateAt:    user.UpdateAt,
+	}, nil
 }
 
-func DeleteAUser(name string) error {
-	var user []User
-	if getAllUsersErr := GetAllUsers(&user); getAllUsersErr != nil {
-		return getAllUsersErr
+// GetById implements [core.UserModel].
+func (u *User) GetById(gid string) (*core.User, error) {
+	var user User
+	if err := database.DB.Find(&user, "google_id = ?", gid).Error; err != nil {
+		return nil, err
 	}
 
-	if err := database.DB.Where("name = ?", name).Delete(user).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func GetUserById(user *User, id string) error {
-	if err := database.DB.First(user, "id = ?", id).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func GetUserByGoogleId(user *User, gid string) error {
-	if err := database.DB.Find(user, "google_id = ?", gid).Error; err != nil {
-		return err
-	}
-	return nil
+	return &core.User{
+		ID:          int(user.Id),
+		DisplayName: user.DisplayName,
+		Email:       user.Email,
+		GoogleID:    user.GoogleId,
+		CreateAt:    user.CreateAt,
+		UpdateAt:    user.UpdateAt,
+	}, nil
 }

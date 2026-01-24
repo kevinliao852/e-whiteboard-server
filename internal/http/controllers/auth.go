@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/kevinliao852/e-whiteboard-server/internal/models"
+	"github.com/kevinliao852/e-whiteboard-server/internal/core"
+	"github.com/kevinliao852/e-whiteboard-server/internal/service"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -13,7 +14,11 @@ import (
 	"google.golang.org/api/option"
 )
 
-func Login(id string) gin.HandlerFunc {
+type AuthController struct {
+	service *service.UserService
+}
+
+func (ac AuthController) Login(id string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
 		client := &http.Client{}
@@ -37,21 +42,18 @@ func Login(id string) gin.HandlerFunc {
 		name := fmt.Sprintf("%v", payload.Claims["name"])
 
 		// Check if database have this user's credential.
-		var user models.User
-		err := models.GetUserByGoogleId(&user, sub)
-
+		user, err := ac.service.GetUserByGoogleId(sub)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, map[string]string{"status": "auth failed"})
 			return
 		}
 
 		// If not, sign up for this user
-		if user.Id == 0 {
-
-			err := models.CreateAUser(&models.User{
-				GoogleId:    sub,
-				Email:       email,
+		if user.ID == 0 {
+			err := ac.service.Register(&core.User{
 				DisplayName: name,
+				Email:       email,
+				GoogleID:    sub,
 			})
 
 			if err != nil {
@@ -75,7 +77,7 @@ func Login(id string) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"id":           user.Id,
+			"id":           user.ID,
 			"email":        user.Email,
 			"display-name": user.DisplayName,
 		})

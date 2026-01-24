@@ -73,8 +73,8 @@ func Handler(opts ...Option) *gin.Engine {
 	}
 
 	var wc controllers.WhiteboardController
-	cnt := 0
-	rc := controllers.RoomController{Count: &cnt}
+	var userController controllers.UserController
+	var authController controllers.AuthController
 
 	r.Use(sessions.Sessions("whiteboardsession", store))
 	r.Use(middlewares.LoggerMiddleWare)
@@ -82,10 +82,7 @@ func Handler(opts ...Option) *gin.Engine {
 	v1 := r.Group("/v1")
 
 	// user routes
-	v1.GET("/user/:id", controllers.GetUser, currentAuthMiddleware)
-	v1.GET("/user", controllers.GetUsers, currentAuthMiddleware)
-	v1.POST("/user", controllers.Register)
-	v1.DELETE("/user/:name", controllers.DeleteAUser, currentAuthMiddleware)
+	v1.GET("/user/:id", userController.GetUser, currentAuthMiddleware)
 
 	// whiteboard routes
 	v1.GET("/whiteboards", wc.GetWhiteboardByUserId)
@@ -93,10 +90,7 @@ func Handler(opts ...Option) *gin.Engine {
 	v1.DELETE("/whiteboards/:id", wc.DeleteWhiteboard)
 
 	// auth routes
-	r.POST("/login", controllers.Login(os.Getenv("GOOGLE_CLIENT_ID")))
-
-	// test routes
-	r.GET("/test", rc.GetCurrentRoomCount)
+	r.POST("/login", authController.Login(os.Getenv("GOOGLE_CLIENT_ID")))
 
 	// WebSocket routes
 	wsGroup := r.Group("/ws")

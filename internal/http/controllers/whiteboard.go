@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/kevinliao852/e-whiteboard-server/internal/core"
-	"github.com/kevinliao852/e-whiteboard-server/internal/models"
 	"github.com/kevinliao852/e-whiteboard-server/internal/service"
 
 	"github.com/go-playground/validator/v10"
@@ -16,7 +15,6 @@ import (
 var validate = validator.New()
 
 type WhiteboardController struct {
-	model   models.Whiteboard
 	service service.WhiteboardService
 }
 

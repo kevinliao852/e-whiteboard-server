@@ -1,59 +1,25 @@
 package controllers
 
 import (
-	"github.com/kevinliao852/e-whiteboard-server/internal/models"
-	"fmt"
 	"net/http"
+
+	"github.com/kevinliao852/e-whiteboard-server/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
-func GetUsers(c *gin.Context) {
-
-	var users []models.User
-	err := models.GetAllUsers(&users)
-	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
-	} else {
-
-		c.JSON(http.StatusOK, users)
-	}
-
+type UserController struct {
+	service service.UserService
 }
 
-func GetUser(c *gin.Context) {
-	var user models.User
+func (ctrl *UserController) GetUser(c *gin.Context) {
 	id := c.Param("id")
-	if err := models.GetUserById(&user, id); err != nil {
-		fmt.Println(err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-	} else {
-		c.JSON(http.StatusOK, user)
-	}
-}
 
-func Register(c *gin.Context) {
-	var user models.User
-	err := c.BindJSON(&user)
-
+	user, err := ctrl.service.GetUser(id)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	err = models.CreateAUser(&user)
-
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-	} else {
-		c.JSON(http.StatusOK, user)
-	}
-}
-
-func DeleteAUser(c *gin.Context) {
-	if err := models.DeleteAUser(c.Param("name")); err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-	} else {
-		c.JSON(http.StatusOK, "success")
-	}
+	c.JSON(http.StatusOK, user)
 }
