@@ -27,9 +27,9 @@ func (u *User) Create(user *core.User) error {
 }
 
 // GetByGoogleId implements [core.UserModel].
-func (u *User) GetByGoogleId(id string) (*core.User, error) {
+func (u *User) GetByGoogleId(gid string) (*core.User, error) {
 	var user User
-	if err := database.DB.First(&user, "id = ?", id).Error; err != nil {
+	if err := database.DB.First(&user, "google_id = ?", gid).Error; err != nil {
 		return nil, err
 	}
 	return &core.User{
@@ -43,9 +43,9 @@ func (u *User) GetByGoogleId(id string) (*core.User, error) {
 }
 
 // GetById implements [core.UserModel].
-func (u *User) GetById(gid string) (*core.User, error) {
+func (u *User) GetById(id string) (*core.User, error) {
 	var user User
-	if err := database.DB.Find(&user, "google_id = ?", gid).Error; err != nil {
+	if err := database.DB.First(&user, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
 
