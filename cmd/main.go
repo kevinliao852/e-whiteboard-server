@@ -5,7 +5,7 @@ import (
 
 	"github.com/kevinliao852/e-whiteboard-server/internal/database"
 	"github.com/kevinliao852/e-whiteboard-server/internal/models"
-	"github.com/kevinliao852/e-whiteboard-server/internal/routes"
+	"github.com/kevinliao852/e-whiteboard-server/internal/route"
 	"github.com/kevinliao852/e-whiteboard-server/pkg/config"
 
 	"github.com/joho/godotenv"
@@ -66,9 +66,9 @@ func init() {
 var err error
 
 func main() {
-	wc := routes.WithCORS()
+	wc := route.WithCORS()
 
-	r := routes.Handler(wc)
+	r := route.Handler(wc)
 	err := r.Run(os.Getenv("APP_HOST") + ":" + os.Getenv("APP_PORT"))
 
 	if err != nil {
