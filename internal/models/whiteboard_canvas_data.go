@@ -1,8 +1,9 @@
 package models
 
 import (
-	"github.com/kevinliao852/e-whiteboard-server/internal/database"
 	"time"
+
+	"github.com/kevinliao852/e-whiteboard-server/internal/database"
 )
 
 type WhiteboardCanvasData struct {
@@ -16,25 +17,10 @@ type WhiteboardCanvasData struct {
 	UpdateAt     time.Time
 }
 
-func CreateAWhiteboardCanvasData(wb *WhiteboardCanvasData) error {
+func Create(wb *WhiteboardCanvasData) error {
 	if err := database.DB.Create(wb).Error; err != nil {
 		return err
 	}
 
-	return nil
-}
-
-func DeleteAWhiteboardCanvasData(id uint) error {
-
-	if err := database.DB.Where("id = ?", id).Delete(&WhiteboardCanvasData{}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func GetWhiteboardCanvasDataById(wb *WhiteboardCanvasData, id uint) error {
-	if err := database.DB.Find(wb, "id = ?", id).Error; err != nil {
-		return err
-	}
 	return nil
 }

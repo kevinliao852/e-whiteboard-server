@@ -15,5 +15,4 @@ type CanvasData struct {
 
 type CanvasDataInterface interface {
 	Create(data *CanvasData) error
-	GetById(id int) (*CanvasData, error)
 }

@@ -117,7 +117,7 @@ func (swm *StoreWhiteboardMessage) SaveMessage(message []byte) error {
 		return fmt.Errorf("[SaveMessage] WhiteboardMessage Unmarshal failed %+v", err)
 	}
 
-	if err = models.CreateAWhiteboardCanvasData(&models.WhiteboardCanvasData{
+	if err = models.Create(&models.WhiteboardCanvasData{
 		StartX:       wmd.Start[0],
 		StartY:       wmd.Start[1],
 		EndX:         wmd.End[0],
