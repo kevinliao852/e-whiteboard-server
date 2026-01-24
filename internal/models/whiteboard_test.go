@@ -1,70 +1,78 @@
 package models
 
 import (
-	"database/sql/driver"
-	"regexp"
 	"testing"
-	"time"
 
+	"github.com/kevinliao852/e-whiteboard-server/internal/core"
 	"github.com/kevinliao852/e-whiteboard-server/internal/database"
 
-	"github.com/DATA-DOG/go-sqlmock"
-	"gorm.io/driver/mysql"
+	"github.com/stretchr/testify/assert"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-var (
-	now = time.Now()
-)
+// setupTestDB initializes an in-memory SQLite database for tests
+func setupTestDB(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	assert.NoError(t, err)
 
-type AnyTime struct{}
+	// override global DB
+	database.DB = db
 
-// Match satisfies sqlmock.Argument interface
-func (a AnyTime) Match(v driver.Value) bool {
-	_, ok := v.(time.Time)
-	return ok
+	// migrate schema
+	err = database.DB.AutoMigrate(&core.Whiteboard{})
+	assert.NoError(t, err)
 }
 
-func setup(t *testing.T) (sqlmock.Sqlmock, *gorm.DB) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+func TestWhiteboard_Create(t *testing.T) {
+	setupTestDB(t)
+
+	repo := &Whiteboard{}
+
+	wb := &core.Whiteboard{
+		UserId: 1,
+		Name:   "Test Board",
 	}
 
-	gormDB, err := gorm.Open(mysql.New(mysql.Config{
-		Conn:                      db,
-		SkipInitializeWithVersion: true,
-	}), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a gorm database connection", err)
-	}
-
-	return mock, gormDB
+	err := repo.Create(wb)
+	assert.NoError(t, err)
+	assert.NotZero(t, wb.Id)
 }
 
-func TestCreateAWhiteboard(t *testing.T) {
-	mock, gormDB := setup(t)
-	database.DB = gormDB
+func TestWhiteboard_GetByUserId(t *testing.T) {
+	setupTestDB(t)
 
-	wb := &Whiteboard{
-		UserId:    1,
-		Name:      "Test Whiteboard",
-		CreatedAt: now,
-		UpdatedAt: now,
+	repo := &Whiteboard{}
+
+	// seed data
+	_ = repo.Create(&core.Whiteboard{UserId: 1, Name: "Board A"})
+	_ = repo.Create(&core.Whiteboard{UserId: 1, Name: "Board B"})
+	_ = repo.Create(&core.Whiteboard{UserId: 2, Name: "Board C"})
+
+	wbs, err := repo.GetByUserId(1)
+	assert.NoError(t, err)
+	assert.Len(t, wbs, 2)
+}
+
+func TestWhiteboard_Delete(t *testing.T) {
+	setupTestDB(t)
+
+	repo := &Whiteboard{}
+
+	wb := &core.Whiteboard{
+		UserId: 1,
+		Name:   "To Delete",
 	}
 
-	mock.ExpectBegin()
-	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `whiteboards` (`user_id`,`name`,`created_at`,`updated_at`) VALUES (?,?,?,?)")).
-		WithArgs(wb.UserId, wb.Name, AnyTime{}, AnyTime{}).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectCommit()
+	_ = repo.Create(wb)
 
-	var w Whiteboard
-	if err := w.CreateAWhiteboard(wb); err != nil {
-		t.Errorf("Failed to create whiteboard: %v", err)
-	}
+	err := repo.Delete(wb.Id)
+	assert.NoError(t, err)
 
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("there were unfulfilled expectations: %s", err)
-	}
+	var count int64
+	database.DB.Model(&core.Whiteboard{}).
+		Where("id = ?", wb.Id).
+		Count(&count)
+
+	assert.Equal(t, int64(0), count)
 }

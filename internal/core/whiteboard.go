@@ -10,10 +10,8 @@ type Whiteboard struct {
 	UpdatedAt time.Time
 }
 
-type WhiteboardInterface interface {
+type WhiteboardModel interface {
 	Create(wb *Whiteboard) error
 	Delete(id uint) error
-	GetById(id uint) ([]Whiteboard, error)
-	GetByUserId(userId uint) ([]Whiteboard, error)
-	Update(wb *Whiteboard) error
+	GetByUserId(userId uint) ([]*Whiteboard, error)
 }

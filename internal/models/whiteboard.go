@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	"github.com/kevinliao852/e-whiteboard-server/internal/core"
 	"github.com/kevinliao852/e-whiteboard-server/internal/database"
 )
 
@@ -15,8 +16,8 @@ type Whiteboard struct {
 	UpdatedAt time.Time // corrected 'UpdateAt' to 'UpdatedAt'
 }
 
-// CreateAWhiteboard creates a new whiteboard record in the database.
-func (w *Whiteboard) CreateAWhiteboard(wb *Whiteboard) error {
+// Create implements [core.WhiteboardModel].
+func (w *Whiteboard) Create(wb *core.Whiteboard) error {
 	if err := database.DB.Create(wb).Error; err != nil {
 		return err
 	}
@@ -24,34 +25,33 @@ func (w *Whiteboard) CreateAWhiteboard(wb *Whiteboard) error {
 	return nil
 }
 
-// DeleteAWhiteboard deletes a whiteboard record from the database by its ID.
-func (w *Whiteboard) DeleteAWhiteboard(id uint) error {
+// Delete implements [core.WhiteboardModel].
+func (w *Whiteboard) Delete(id uint) error {
 	if err := database.DB.Where("id = ?", id).Delete(&Whiteboard{}).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-// GetWhiteboardsById retrieves whiteboard records from the database by their ID.
-func (w *Whiteboard) GetWhiteboardsById(wbs *[]Whiteboard, id uint) error {
-	if err := database.DB.Find(wbs, "id = ?", id).Error; err != nil {
-		return err
+// GetByUserId implements [core.WhiteboardModel].
+func (w *Whiteboard) GetByUserId(userId uint) ([]*core.Whiteboard, error) {
+	wbs := make([]Whiteboard, 0)
+	if err := database.DB.Find(&wbs, "user_id = ?", userId).Error; err != nil {
+		return nil, err
 	}
-	return nil
+
+	var result []*core.Whiteboard
+	for i := range wbs {
+		result = append(result, &core.Whiteboard{
+			Id:        wbs[i].Id,
+			UserId:    wbs[i].UserId,
+			Name:      wbs[i].Name,
+			CreatedAt: wbs[i].CreatedAt,
+			UpdatedAt: wbs[i].UpdatedAt,
+		})
+	}
+
+	return result, nil
 }
 
-// GetWhiteboardsByUserId retrieves all whiteboard records for a specific user.
-func (w *Whiteboard) GetWhiteboardsByUserId(wbs *[]Whiteboard, userId uint) error {
-	if err := database.DB.Find(wbs, "user_id = ?", userId).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-// UpdateAWhiteboard updates an existing whiteboard record in the database.
-func (w *Whiteboard) UpdateAWhiteboard(wb *Whiteboard) error {
-	if err := database.DB.Save(wb).Error; err != nil {
-		return err
-	}
-	return nil
-}
+var _ core.WhiteboardModel = (*Whiteboard)(nil)

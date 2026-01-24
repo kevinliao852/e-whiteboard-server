@@ -1,88 +1,116 @@
 package controllers
 
 import (
-	"log"
 	"net/http"
-	"strconv"
+	"time"
 
+	"github.com/kevinliao852/e-whiteboard-server/internal/core"
 	"github.com/kevinliao852/e-whiteboard-server/internal/models"
+	"github.com/kevinliao852/e-whiteboard-server/internal/service"
+
+	"github.com/go-playground/validator/v10"
 
 	"github.com/gin-gonic/gin"
 )
 
-type WhiteboardControllerI interface {
-	GetWhiteboardByUser()
-}
+var validate = validator.New()
 
 type WhiteboardController struct {
-	model models.Whiteboard
+	model   models.Whiteboard
+	service service.WhiteboardService
+}
+
+type GetWhiteboardByUserQuery struct {
+	UserID uint `form:"user-id" validate:"required,gt=0"`
+}
+
+type GetWhiteboardByIdResponse struct {
+	IDs []uint `json:"ids"`
+}
+
+type CreateWhiteboardRequest struct {
+	UserID uint   `json:"user_id" validate:"required,gt=0"`
+	Name   string `json:"name" validate:"required,min=1,max=100"`
+}
+
+type DeleteWhiteboardRequest struct {
+	WhiteboardID uint `json:"whiteboard_id" validate:"required,gt=0"`
 }
 
 func (wc *WhiteboardController) GetWhiteboardByUserId(c *gin.Context) {
-	var whiteboards []models.Whiteboard
-	userId, err := strconv.Atoi(c.DefaultQuery("user-id", ""))
+	var query GetWhiteboardByUserQuery
 
-	if err != nil {
-		c.String(http.StatusUnprocessableEntity, "")
+	if err := c.ShouldBindQuery(&query); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid query"})
 		return
 	}
 
-	err = wc.model.GetWhiteboardsByUserId(&whiteboards, uint(userId))
-
-	whiteboardResponse := make([]map[string]interface{}, 0)
-
-	for i := 0; i < len(whiteboards); i++ {
-		whiteboardResponse = append(whiteboardResponse, map[string]interface{}{
-			"id": whiteboards[i].Id,
-		})
+	if err := validate.Struct(query); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+		return
 	}
 
+	ids, err := wc.service.GetUserWhiteboards(query.UserID)
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
-	} else {
-		c.JSON(http.StatusOK, whiteboardResponse)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create whiteboard"})
+		return
 	}
 
+	var response GetWhiteboardByIdResponse
+	for _, wb := range ids {
+		response.IDs = append(response.IDs, wb.Id)
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func (wc *WhiteboardController) CreateWhiteboard(c *gin.Context) {
-	var whiteboard models.Whiteboard
+	var req CreateWhiteboardRequest
 
-	err := c.BindJSON(&whiteboard)
-
-	if err != nil {
-		c.String(http.StatusBadRequest, "Not a valid JSON")
-		c.AbortWithStatus(http.StatusBadRequest)
-		log.Println(err)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON"})
 		return
 	}
 
-	err = wc.model.CreateAWhiteboard(&whiteboard)
-
-	if err != nil {
-		c.String(http.StatusBadRequest, "Create whiteboard failed")
-		c.AbortWithStatus(http.StatusBadRequest)
-
-	} else {
-		c.JSON(http.StatusOK, whiteboard)
+	if err := validate.Struct(req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+		return
 	}
+
+	whiteboard, err := wc.service.CreateWhiteboard(
+		core.Whiteboard{
+			UserId:    req.UserID,
+			Name:      req.Name,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		})
+	if err != nil {
+		c.String(http.StatusBadRequest, "Create whiteboard service failed")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	c.JSON(http.StatusOK, whiteboard)
 }
 
 func (wc *WhiteboardController) DeleteWhiteboard(c *gin.Context) {
-	var whiteboard models.Whiteboard
+	var req DeleteWhiteboardRequest
 
-	id, err := strconv.Atoi(c.Param("id"))
-
-	if err != nil {
-		c.AbortWithStatus(http.StatusUnprocessableEntity)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON"})
+		return
+	}
+	if err := validate.Struct(req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = wc.model.DeleteAWhiteboard(uint(id))
-
+	err := wc.service.DeleteWhiteboard(req.WhiteboardID)
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
-	} else {
-		c.JSON(http.StatusOK, whiteboard)
+		c.String(http.StatusBadRequest, "Delete whiteboard service failed")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
 	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Whiteboard deleted successfully"})
 }
