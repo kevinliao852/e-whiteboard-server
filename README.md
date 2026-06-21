@@ -1,33 +1,41 @@
 # e-whiteboard
 
-A back-end server of Online whiteboard
+Backend server for the `e-whiteboard` app.
+
+It provides:
+- Google-based login
+- whiteboard CRUD APIs
+- websocket endpoints for collaborative drawing
+- SQLite persistence for whiteboards and canvas data
 
 ![Image](https://i.imgur.com/XV8RHdK.gif)
 
-## Instructions
+## Setup
 
-#### Setup Environment
+Copy the example environment file:
 
-```
+```bash
 cp .env{.example,}
 ```
 
-Set `SESSION_SECRET` in `.env` to a long random value before starting the server.
+Set these values in `.env` before starting the server:
+- `GOOGLE_CLIENT_ID`
+- `SESSION_SECRET`
+- `DATABASE_PATH` if you do not want the default SQLite file path
 
-#### Run the Dev Server
- 
+Use a long random value for `SESSION_SECRET`.
+
+## Run
+
 ```bash
-go run main.go
+go run ./cmd
 ```
 
-## Source code
+## Repos
 
-The project source code is spread across a number of repos:
+The project is split across separate repositories:
 
 | Name                         | Repo Address                                               |
 |:-----------------------------|:-----------------------------------------------------------|
 | e-whiteboard-server          | https://github.com/kevinliao852/e-whiteboard-server        |
 | e-whiteboard-client          | https://github.com/kevinliao852/e-whiteboard-client        |
-
-
-    
