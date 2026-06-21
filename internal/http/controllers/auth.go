@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"google.golang.org/api/idtoken"
 	"google.golang.org/api/option"
+	"gorm.io/gorm"
 )
 
 type AuthController struct {
@@ -48,19 +50,26 @@ func (ac AuthController) Login(id string) gin.HandlerFunc {
 
 		// Check if database have this user's credential.
 		user, err := ac.service.GetUserByGoogleId(sub)
-		if err != nil {
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusInternalServerError, map[string]string{"status": "auth failed"})
 			return
 		}
 
-		// If not, sign up for this user
-		if user.ID == 0 {
-			err := ac.service.Register(&core.User{
+		// If not, sign up for this user.
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			newUser := &core.User{
 				DisplayName: name,
 				Email:       email,
 				GoogleID:    sub,
-			})
+			}
+			err := ac.service.Register(newUser)
 
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, map[string]string{"status": "auth failed"})
+				return
+			}
+
+			user, err = ac.service.GetUserByGoogleId(sub)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, map[string]string{"status": "auth failed"})
 				return

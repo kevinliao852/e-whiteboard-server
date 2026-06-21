@@ -14,10 +14,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type DrawingDataQuery struct {
-	RoomID string `form:"room_id"`
-}
-
 type DrawingController struct {
 	RoomService core.RoomService
 }
@@ -78,11 +74,6 @@ func resolveRoomID(ctx *gin.Context) string {
 	pathRoomID := ctx.Param("id")
 	if pathRoomID != "" {
 		return pathRoomID
-	}
-
-	var dataQuery DrawingDataQuery
-	if err := ctx.ShouldBindQuery(&dataQuery); err == nil && dataQuery.RoomID != "" {
-		return dataQuery.RoomID
 	}
 
 	return fmt.Sprintf("%d", time.Now().UnixNano())
