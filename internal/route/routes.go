@@ -1,6 +1,5 @@
 package route
 
-
 import (
 	"os"
 
@@ -52,6 +51,9 @@ func Handler(opts ...Option) *gin.Engine {
 		Model: &model.User{}})
 	authController := controllers.NewAuthController(&service.UserSVC{
 		Model: &model.User{}})
+	drawingController := controllers.DrawingController{
+		RoomService: &service.RoomSVC{},
+	}
 
 	v1 := r.Group("/v1")
 
@@ -68,8 +70,7 @@ func Handler(opts ...Option) *gin.Engine {
 
 	// WebSocket routes
 	wsGroup := r.Group("/ws")
-	wsGroup.GET("/chatting", controllers.WebsocketRoute())
-	wsGroup.GET("/drawing/:id", controllers.WebsocketRoute())
+	wsGroup.GET("/drawing/:id", drawingController.Draw())
 
 	return r
 }
