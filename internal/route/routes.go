@@ -30,7 +30,7 @@ func Handler(opts ...Option) *gin.Engine {
 	}
 
 	r := gin.New()
-	store := cookie.NewStore([]byte("secret"))
+	store := cookie.NewStore([]byte(os.Getenv("SESSION_SECRET")))
 
 	r.Use(sessions.Sessions("whiteboardsession", store))
 	r.Use(middlewares.LoggerMiddleWare)

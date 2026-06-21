@@ -12,6 +12,8 @@ A back-end server of Online whiteboard
 cp .env{.example,}
 ```
 
+Set `SESSION_SECRET` in `.env` to a long random value before starting the server.
+
 #### Run the Dev Server
  
 ```bash

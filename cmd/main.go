@@ -18,7 +18,11 @@ func init() {
 		log.Fatal("Error loading .env file")
 	}
 
-	configManager := config.NewConfigManager([]string{"APP_HOST", "APP_PORT"})
+	configManager := config.NewConfigManager([]string{
+		"APP_HOST",
+		"APP_PORT",
+		"SESSION_SECRET",
+	})
 
 	if err = configManager.CheckAndLoadConfig(); err != nil {
 		log.Fatal(err)
