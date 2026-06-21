@@ -1,6 +1,5 @@
 package route
 
-
 import (
 	"os"
 
@@ -39,7 +38,9 @@ func Handler(opts ...Option) *gin.Engine {
 	if options.UseCORS {
 		config := cors.DefaultConfig()
 		config.AllowOrigins = []string{os.Getenv("HOST_AllOW_ORIGINS")}
-		config.AllowHeaders = []string{os.Getenv("HOST_AllOW_HEADERS")}
+		// config.AllowHeaders = []string{os.Getenv("HOST_AllOW_HEADERS")}
+		config.AllowHeaders = []string{"Content-Type", "Authorization"}
+		config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 		config.AllowCredentials = true
 
 		r.Use(cors.New(config))
@@ -52,6 +53,9 @@ func Handler(opts ...Option) *gin.Engine {
 		Model: &model.User{}})
 	authController := controllers.NewAuthController(&service.UserSVC{
 		Model: &model.User{}})
+	drawingController := controllers.DrawingController{
+		RoomService: &service.RoomSVC{},
+	}
 
 	v1 := r.Group("/v1")
 
@@ -68,8 +72,8 @@ func Handler(opts ...Option) *gin.Engine {
 
 	// WebSocket routes
 	wsGroup := r.Group("/ws")
-	wsGroup.GET("/chatting", controllers.WebsocketRoute())
-	wsGroup.GET("/drawing/:id", controllers.WebsocketRoute())
+	wsGroup.GET("/drawing", drawingController.Draw())
+	wsGroup.GET("/drawing/:id", drawingController.Draw())
 
 	return r
 }
