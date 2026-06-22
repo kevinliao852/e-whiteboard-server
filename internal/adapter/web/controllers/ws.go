@@ -1,9 +1,8 @@
 package controllers
 
 import (
-	"encoding/json"
-	"fmt"
-	"time"
+	"net/http"
+	"strconv"
 
 	"github.com/kevinliao852/e-whiteboard-server/internal/adapter/web/ws"
 	"github.com/kevinliao852/e-whiteboard-server/internal/core"
@@ -17,12 +16,22 @@ type DrawingController struct {
 	DrawingService core.DrawingService
 }
 
+type PointResponse struct {
+	ID           int    `json:"id"`
+	WhiteboardID int    `json:"whiteboard_id"`
+	Start        [2]int `json:"start"`
+	End          [2]int `json:"end"`
+}
+
 // Draw handles WebSocket connections for a specific room.
 // After upgrading the HTTP connection to a WebSocket, it manages client registration.
 func (dc DrawingController) Draw() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		requestedRoomID := ctx.Param("id")
-		roomID := resolveRoomID(ctx)
+		roomID := ctx.Param("id")
+		if _, err := strconv.Atoi(roomID); err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid whiteboard id"})
+			return
+		}
 
 		if _, err := dc.RoomService.CreateRoom(roomID); err != nil {
 			log.Printf("failed to create or load room: %v", err)
@@ -33,14 +42,6 @@ func (dc DrawingController) Draw() gin.HandlerFunc {
 		if err != nil {
 			log.Printf("failed to create new participant: %v", err)
 			return
-		}
-
-		if requestedRoomID == "" {
-			if err := dc.NotifyRoomCreated(participant, roomID); err != nil {
-				log.Printf("failed to notify created room: %v", err)
-				_ = participant.Close()
-				return
-			}
 		}
 
 		if err := dc.RoomService.JoinRoom(roomID, participant); err != nil {
@@ -67,6 +68,32 @@ func (dc DrawingController) Draw() gin.HandlerFunc {
 	}
 }
 
+func (dc DrawingController) GetPoints(c *gin.Context) {
+	whiteboardID, err := strconv.Atoi(c.Param("id"))
+	if err != nil || whiteboardID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid whiteboard id"})
+		return
+	}
+
+	points, err := dc.DrawingService.ListCanvasData(whiteboardID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load points"})
+		return
+	}
+
+	response := make([]PointResponse, 0, len(points))
+	for _, point := range points {
+		response = append(response, PointResponse{
+			ID:           point.ID,
+			WhiteboardID: point.WhiteboardId,
+			Start:        [2]int{point.StartX, point.StartY},
+			End:          [2]int{point.EndX, point.EndY},
+		})
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
 func createParticipant(ctx *gin.Context) (*ws.Participant, error) {
 	hub := ws.NewWSHub()
 	client, err := hub.NewClient(ctx.Writer, ctx.Request)
@@ -76,28 +103,4 @@ func createParticipant(ctx *gin.Context) (*ws.Participant, error) {
 	participant := ws.NewParticipant(0, &client)
 
 	return participant, nil
-}
-
-func resolveRoomID(ctx *gin.Context) string {
-	pathRoomID := ctx.Param("id")
-	if pathRoomID != "" {
-		return pathRoomID
-	}
-
-	return fmt.Sprintf("%d", time.Now().UnixNano())
-}
-
-func (dc DrawingController) NotifyRoomCreated(participant core.Participant, roomID string) error {
-	message, err := json.Marshal(ws.Message{
-		Scope: string(ws.ScopeTypeLobby),
-		Data: gin.H{
-			"room_id": roomID,
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	participant.Notify(string(message))
-	return nil
 }

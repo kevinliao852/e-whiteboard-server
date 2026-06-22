@@ -27,6 +27,20 @@ func (m *fakeCanvasModel) Create(data *core.CanvasData) error {
 	return nil
 }
 
+func (m *fakeCanvasModel) GetByWhiteboardID(whiteboardID int) ([]core.CanvasData, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	result := make([]core.CanvasData, 0)
+	for _, entry := range m.data {
+		if entry.WhiteboardId == whiteboardID {
+			result = append(result, *entry)
+		}
+	}
+
+	return result, nil
+}
+
 func TestDrawingSVC_EnqueueWhiteboardMessage(t *testing.T) {
 	model := &fakeCanvasModel{ch: make(chan *core.CanvasData, 1)}
 	svc := NewDrawingSVC(model)
@@ -80,5 +94,28 @@ func TestDrawingSVC_IgnoreNonWhiteboardMessage(t *testing.T) {
 	case got := <-model.ch:
 		t.Fatalf("expected no persistence for lobby message, got %#v", got)
 	case <-time.After(200 * time.Millisecond):
+	}
+}
+
+func TestDrawingSVC_ListCanvasData(t *testing.T) {
+	model := &fakeCanvasModel{
+		data: []*core.CanvasData{
+			{ID: 1, WhiteboardId: 7, StartX: 10, StartY: 20, EndX: 30, EndY: 40},
+			{ID: 2, WhiteboardId: 8, StartX: 11, StartY: 21, EndX: 31, EndY: 41},
+			{ID: 3, WhiteboardId: 7, StartX: 12, StartY: 22, EndX: 32, EndY: 42},
+		},
+	}
+	svc := NewDrawingSVC(model)
+
+	got, err := svc.ListCanvasData(7)
+	if err != nil {
+		t.Fatalf("ListCanvasData returned error: %v", err)
+	}
+
+	if len(got) != 2 {
+		t.Fatalf("expected 2 points, got %d", len(got))
+	}
+	if got[0].WhiteboardId != 7 || got[1].WhiteboardId != 7 {
+		t.Fatalf("expected only whiteboard 7 data, got %#v", got)
 	}
 }

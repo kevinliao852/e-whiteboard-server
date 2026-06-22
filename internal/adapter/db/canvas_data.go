@@ -32,6 +32,32 @@ func (w *WhiteboardCanvasData) Create(data *core.CanvasData) error {
 	return nil
 }
 
+func (w *WhiteboardCanvasData) GetByWhiteboardID(whiteboardID int) ([]core.CanvasData, error) {
+	var rows []WhiteboardCanvasData
+	if err := database.DB.
+		Where("whiteboard_id = ?", whiteboardID).
+		Order("id ASC").
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	result := make([]core.CanvasData, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, core.CanvasData{
+			ID:           int(row.ID),
+			WhiteboardId: int(row.WhiteboardId),
+			StartX:       int(row.StartX),
+			EndX:         int(row.EndX),
+			StartY:       int(row.StartY),
+			EndY:         int(row.EndY),
+			CreatedAt:    row.CreatedAt,
+			UpdateAt:     row.UpdateAt,
+		})
+	}
+
+	return result, nil
+}
+
 func Create(wb *WhiteboardCanvasData) error {
 	if err := database.DB.Create(wb).Error; err != nil {
 		return err

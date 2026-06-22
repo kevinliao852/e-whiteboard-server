@@ -75,6 +75,7 @@ func Handler(opts ...Option) *gin.Engine {
 	v1.GET("/whiteboards", currentAuthMiddleware, whiteboardController.GetWhiteboardByUserId)
 	v1.POST("/whiteboards", currentAuthMiddleware, whiteboardController.CreateWhiteboard)
 	v1.DELETE("/whiteboards/:id", currentAuthMiddleware, whiteboardController.DeleteWhiteboard)
+	v1.GET("/whiteboards/:id/points", currentAuthMiddleware, drawingController.GetPoints)
 
 	// auth routes
 	r.POST("/login", authController.Login(os.Getenv("GOOGLE_CLIENT_ID")))
@@ -82,7 +83,6 @@ func Handler(opts ...Option) *gin.Engine {
 	// WebSocket routes
 	wsGroup := r.Group("/ws")
 	wsGroup.GET("/chat/:id", chatController.Chat())
-	wsGroup.GET("/drawing", drawingController.Draw())
 	wsGroup.GET("/drawing/:id", drawingController.Draw())
 
 	return r

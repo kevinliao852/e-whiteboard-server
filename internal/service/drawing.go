@@ -78,6 +78,14 @@ func (s *DrawingSVC) Enqueue(roomID string, message []byte) error {
 	return nil
 }
 
+func (s *DrawingSVC) ListCanvasData(whiteboardID int) ([]core.CanvasData, error) {
+	if s == nil || s.Model == nil {
+		return nil, nil
+	}
+
+	return s.Model.GetByWhiteboardID(whiteboardID)
+}
+
 func (s *DrawingSVC) parseCanvasData(roomID string, raw json.RawMessage) (*core.CanvasData, error) {
 	whiteboardID, err := strconv.Atoi(roomID)
 	if err != nil {

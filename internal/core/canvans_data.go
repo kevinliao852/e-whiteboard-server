@@ -15,8 +15,10 @@ type CanvasData struct {
 
 type CanvasDataInterface interface {
 	Create(data *CanvasData) error
+	GetByWhiteboardID(whiteboardID int) ([]CanvasData, error)
 }
 
 type DrawingService interface {
 	Enqueue(roomID string, message []byte) error
+	ListCanvasData(whiteboardID int) ([]CanvasData, error)
 }
