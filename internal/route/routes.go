@@ -89,6 +89,7 @@ func Handler(opts ...Option) *gin.Engine {
 
 	// auth routes
 	r.POST("/login", authController.Login(os.Getenv("GOOGLE_CLIENT_ID")))
+	r.POST("/guest-login", authController.GuestLogin())
 
 	// WebSocket routes
 	wsGroup := r.Group("/ws")

@@ -193,6 +193,30 @@ func TestWhiteboardController_CreateWhiteboard(t *testing.T) {
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 	})
+
+	t.Run("GuestCannotCreate", func(t *testing.T) {
+		mockService := new(MockWhiteboardService)
+		ctrl := NewWhiteboardController(mockService)
+		router := gin.Default()
+		store := cookie.NewStore([]byte("test-secret"))
+		router.Use(sessions.Sessions("testsession", store))
+		router.Use(func(c *gin.Context) {
+			session := sessions.Default(c)
+			session.Set("is_guest", true)
+			session.Set("display_name", "Guest-1234")
+			_ = session.Save()
+			c.Next()
+		})
+		router.POST("/whiteboards", ctrl.CreateWhiteboard)
+
+		body, _ := json.Marshal(CreateWhiteboardRequest{Name: "New Board"})
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/whiteboards", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusForbidden, w.Code)
+	})
 }
 
 func TestWhiteboardController_DeleteWhiteboard(t *testing.T) {
@@ -204,6 +228,14 @@ func TestWhiteboardController_DeleteWhiteboard(t *testing.T) {
 
 		ctrl := NewWhiteboardController(mockService)
 		router := gin.Default()
+		store := cookie.NewStore([]byte("test-secret"))
+		router.Use(sessions.Sessions("testsession", store))
+		router.Use(func(c *gin.Context) {
+			session := sessions.Default(c)
+			session.Set("user_id", 1)
+			_ = session.Save()
+			c.Next()
+		})
 		router.DELETE("/whiteboards/:id", ctrl.DeleteWhiteboard)
 
 		w := httptest.NewRecorder()
@@ -218,6 +250,14 @@ func TestWhiteboardController_DeleteWhiteboard(t *testing.T) {
 		mockService := new(MockWhiteboardService)
 		ctrl := NewWhiteboardController(mockService)
 		router := gin.Default()
+		store := cookie.NewStore([]byte("test-secret"))
+		router.Use(sessions.Sessions("testsession", store))
+		router.Use(func(c *gin.Context) {
+			session := sessions.Default(c)
+			session.Set("user_id", 1)
+			_ = session.Save()
+			c.Next()
+		})
 		router.DELETE("/whiteboards/:id", ctrl.DeleteWhiteboard)
 
 		w := httptest.NewRecorder()

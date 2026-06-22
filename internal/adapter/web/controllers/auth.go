@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"context"
+	crypto_rand "crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -18,6 +20,13 @@ import (
 
 type AuthController struct {
 	service core.UserService
+}
+
+type AuthResponse struct {
+	ID          int    `json:"id"`
+	Email       string `json:"email,omitempty"`
+	DisplayName string `json:"display-name"`
+	Role        string `json:"role"`
 }
 
 func NewAuthController(svc core.UserService) *AuthController {
@@ -102,6 +111,8 @@ func (ac AuthController) Login(id string) gin.HandlerFunc {
 		}
 
 		session.Set("user_id", user.ID)
+		session.Set("is_guest", false)
+		session.Set("role", "user")
 		session.Set("email", user.Email)
 		session.Set("display_name", user.DisplayName)
 		session.Set("google_id", user.GoogleID)
@@ -115,10 +126,46 @@ func (ac AuthController) Login(id string) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{
-			"id":           user.ID,
-			"email":        user.Email,
-			"display-name": user.DisplayName,
+		c.JSON(http.StatusOK, AuthResponse{
+			ID:          user.ID,
+			Email:       user.Email,
+			DisplayName: user.DisplayName,
+			Role:        "user",
 		})
 	}
+}
+
+func (ac AuthController) GuestLogin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		session := sessions.Default(c)
+		displayName := guestDisplayName()
+
+		session.Set("is_guest", true)
+		session.Set("role", "guest")
+		session.Set("display_name", displayName)
+		session.Set("email", "")
+		session.Set("user_id", 0)
+
+		if err := session.Save(); err != nil {
+			log.WithError(err).Error("failed to save guest session")
+			_ = c.Error(err).SetType(gin.ErrorTypePrivate)
+			c.JSON(http.StatusInternalServerError, map[string]string{"status": "auth failed"})
+			return
+		}
+
+		c.JSON(http.StatusOK, AuthResponse{
+			ID:          0,
+			DisplayName: displayName,
+			Role:        "guest",
+		})
+	}
+}
+
+func guestDisplayName() string {
+	var b [4]byte
+	if _, err := crypto_rand.Read(b[:]); err != nil {
+		return "Guest"
+	}
+
+	return fmt.Sprintf("Guest-%s", hex.EncodeToString(b[:]))
 }

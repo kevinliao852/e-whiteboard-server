@@ -9,6 +9,7 @@ type ScopeType string
 
 const (
 	ScopeTypeWhiteboard       ScopeType = "whiteboard"
+	ScopeTypeCursor           ScopeType = "cursor"
 	ScopeTypeLobby            ScopeType = "lobby"
 	ScopeTypeWhitboardHistory ScopeType = "whiteboard-history"
 )

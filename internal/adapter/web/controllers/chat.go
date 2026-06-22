@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/kevinliao852/e-whiteboard-server/internal/adapter/web/authstate"
 	"github.com/kevinliao852/e-whiteboard-server/internal/core"
 	log "github.com/sirupsen/logrus"
 )
@@ -50,14 +50,13 @@ func (ctrl *ChatController) Chat() gin.HandlerFunc {
 			return
 		}
 
-		session := sessions.Default(ctx)
-		senderID, ok := sessionUserID(session.Get("user_id"))
-		if !ok || senderID <= 0 {
+		identity, ok := authstate.FromContext(ctx)
+		if !ok {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 			return
 		}
 
-		senderName, _ := session.Get("display_name").(string)
+		senderName := identity.DisplayName
 		if senderName == "" {
 			senderName = "Unknown"
 		}
@@ -67,7 +66,7 @@ func (ctrl *ChatController) Chat() gin.HandlerFunc {
 			return
 		}
 
-		participant, err := createParticipant(ctx)
+		participant, err := createParticipant(ctx, uint(identity.UserID))
 		if err != nil {
 			log.Printf("failed to create new chat participant: %v", err)
 			return
@@ -88,7 +87,7 @@ func (ctrl *ChatController) Chat() gin.HandlerFunc {
 
 		participant.ReadMessage(ctx.Request.Context(), func(message []byte) {
 			rawMessage := string(message)
-			chatMessage := ctrl.chatService.AppendMessage(roomID, senderID, senderName, rawMessage)
+			chatMessage := ctrl.chatService.AppendMessage(roomID, identity.UserID, senderName, rawMessage)
 			payload, err := json.Marshal(chatMessage)
 			if err != nil {
 				log.Printf("failed to marshal chat message: %v", err)

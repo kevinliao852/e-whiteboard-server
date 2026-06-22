@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/kevinliao852/e-whiteboard-server/internal/adapter/web/authstate"
 	"github.com/kevinliao852/e-whiteboard-server/internal/core"
 )
 
@@ -32,14 +32,23 @@ func (ctrl *UserController) GetUser(c *gin.Context) {
 }
 
 func (ctrl *UserController) GetMe(c *gin.Context) {
-	session := sessions.Default(c)
-	userID, ok := sessionUserID(session.Get("user_id"))
+	identity, ok := authstate.FromContext(c)
 	if !ok {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	user, err := ctrl.service.GetUser(strconv.Itoa(userID))
+	if identity.IsGuest {
+		c.JSON(http.StatusOK, gin.H{
+			"id":           0,
+			"email":        "",
+			"display-name": identity.DisplayName,
+			"role":         "guest",
+		})
+		return
+	}
+
+	user, err := ctrl.service.GetUser(strconv.Itoa(identity.UserID))
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -49,5 +58,6 @@ func (ctrl *UserController) GetMe(c *gin.Context) {
 		"id":           user.ID,
 		"email":        user.Email,
 		"display-name": user.DisplayName,
+		"role":         "user",
 	})
 }

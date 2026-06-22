@@ -5,11 +5,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/kevinliao852/e-whiteboard-server/internal/adapter/web/authstate"
 	"github.com/kevinliao852/e-whiteboard-server/internal/core"
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -37,14 +37,18 @@ type CreateWhiteboardRequest struct {
 }
 
 func (wc *WhiteboardController) GetWhiteboardByUserId(c *gin.Context) {
-	session := sessions.Default(c)
-	userID, ok := sessionUserID(session.Get("user_id"))
-	if !ok || userID <= 0 {
+	identity, ok := authstate.FromContext(c)
+	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
-	whiteboards, err := wc.service.GetUserWhiteboards(uint(userID))
+	if identity.IsGuest {
+		c.JSON(http.StatusOK, []WhiteboardSummaryResponse{})
+		return
+	}
+
+	whiteboards, err := wc.service.GetUserWhiteboards(uint(identity.UserID))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create whiteboard"})
 		return
@@ -76,16 +80,20 @@ func (wc *WhiteboardController) CreateWhiteboard(c *gin.Context) {
 		return
 	}
 
-	session := sessions.Default(c)
-	userID, ok := sessionUserID(session.Get("user_id"))
-	if !ok || userID <= 0 {
+	identity, ok := authstate.FromContext(c)
+	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	if identity.IsGuest {
+		c.JSON(http.StatusForbidden, gin.H{"error": "guest cannot create whiteboard"})
 		return
 	}
 
 	whiteboard, err := wc.service.CreateWhiteboard(
 		core.Whiteboard{
-			UserId:    uint(userID),
+			UserId:    uint(identity.UserID),
 			Name:      req.Name,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -100,6 +108,16 @@ func (wc *WhiteboardController) CreateWhiteboard(c *gin.Context) {
 }
 
 func (wc *WhiteboardController) DeleteWhiteboard(c *gin.Context) {
+	identity, ok := authstate.FromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	if identity.IsGuest {
+		c.JSON(http.StatusForbidden, gin.H{"error": "guest cannot delete whiteboard"})
+		return
+	}
+
 	whiteboardID, err := strconv.Atoi(c.Param("id"))
 	if err != nil || whiteboardID <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid whiteboard id"})

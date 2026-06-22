@@ -129,4 +129,28 @@ func TestUserController_GetMe(t *testing.T) {
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 	})
+
+	t.Run("GuestSession", func(t *testing.T) {
+		mockService := new(MockUserService)
+		ctrl := NewUserController(mockService)
+		router := gin.Default()
+		store := cookie.NewStore([]byte("test-secret"))
+		router.Use(sessions.Sessions("testsession", store))
+		router.Use(func(c *gin.Context) {
+			session := sessions.Default(c)
+			session.Set("is_guest", true)
+			session.Set("display_name", "Guest-1234")
+			_ = session.Save()
+			c.Next()
+		})
+		router.GET("/me", ctrl.GetMe)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/me", nil)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "\"role\":\"guest\"")
+		assert.Contains(t, w.Body.String(), "\"display-name\":\"Guest-1234\"")
+	})
 }
