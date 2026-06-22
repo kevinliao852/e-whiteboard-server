@@ -54,8 +54,10 @@ func Handler(opts ...Option) *gin.Engine {
 		Model: &db.User{}})
 	authController := webcontrollers.NewAuthController(&service.UserSVC{
 		Model: &db.User{}})
+	roomState := state.NewRoomState()
+	roomController := webcontrollers.NewRoomController(roomState)
 	drawingController := webcontrollers.DrawingController{
-		RoomService:    state.NewRoomState(),
+		RoomService:    roomState,
 		DrawingService: service.NewDrawingSVC(&db.WhiteboardCanvasData{}),
 	}
 
@@ -63,6 +65,7 @@ func Handler(opts ...Option) *gin.Engine {
 
 	// user routes
 	v1.GET("/user/:id", currentAuthMiddleware, userController.GetUser)
+	v1.GET("/rooms", roomController.ListRooms)
 
 	// whiteboard routes
 	v1.GET("/whiteboards", currentAuthMiddleware, whiteboardController.GetWhiteboardByUserId)

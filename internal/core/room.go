@@ -1,8 +1,13 @@
 package core
 
+import "time"
+
 type Room struct {
 	ID           string
 	Participants []Participant
+	Name         string
+	Status       string
+	LastActivity time.Time
 }
 
 type Participant interface {
@@ -38,4 +43,5 @@ type RoomService interface {
 	JoinRoom(roomID string, participant Participant) error
 	LeaveRoom(roomID string, participant Participant) error
 	BroadcastToRoom(roomID string, message string) error
+	ListRooms() []Room
 }
