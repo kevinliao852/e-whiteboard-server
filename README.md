@@ -8,7 +8,7 @@ It provides:
 - websocket endpoints for collaborative drawing
 - SQLite persistence for whiteboards and canvas data
 
-![Image](https://i.imgur.com/XV8RHdK.gif)
+![Image](https://github.com/user-attachments/assets/b31c4c4a-16c5-4a11-8f2a-1866adb20be5)
 
 ## Setup
 
