@@ -1,43 +1,105 @@
 package service
 
-import "github.com/kevinliao852/e-whiteboard-server/internal/core"
+import (
+	"fmt"
+	"sync"
+
+	"github.com/kevinliao852/e-whiteboard-server/internal/core"
+)
 
 type RoomSVC struct {
-	RoomModel   core.RoomModel
-	RoomWSModel core.RoomWSModel
-	Whiteboard  core.WhiteboardModel
+	mu    sync.RWMutex
+	rooms map[string]*core.Room
 }
 
-// BroadcastToRoom implements [core.RoomService].
-func (r *RoomSVC) BroadcastToRoom(roomID int, message string) error {
-	panic("unimplemented")
+func NewRoomSVC() *RoomSVC {
+	return &RoomSVC{
+		rooms: make(map[string]*core.Room),
+	}
+}
+
+func (r *RoomSVC) ensureRooms() {
+	if r.rooms == nil {
+		r.rooms = make(map[string]*core.Room)
+	}
+}
+
+func (r *RoomSVC) getOrCreateRoom(roomID string) *core.Room {
+	r.ensureRooms()
+
+	room, ok := r.rooms[roomID]
+	if ok {
+		return room
+	}
+
+	room = &core.Room{
+		ID:           roomID,
+		Participants: []core.Participant{},
+	}
+	r.rooms[roomID] = room
+	return room
 }
 
 // CreateRoom implements [core.RoomService].
-func (r *RoomSVC) CreateRoom() (*core.Room, error) {
-	room := &core.Room{
-		Participants: []core.Participant{},
-	}
+func (r *RoomSVC) CreateRoom(roomID string) (*core.Room, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
+	room := r.getOrCreateRoom(roomID)
 	return room, nil
 }
 
 // JoinRoom implements [core.RoomService].
-func (r *RoomSVC) JoinRoom(roomID int, participant core.Participant) error {
-	panic("unimplemented")
+func (r *RoomSVC) JoinRoom(roomID string, participant core.Participant) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	room := r.getOrCreateRoom(roomID)
+	for _, existing := range room.Participants {
+		if existing == participant {
+			return nil
+		}
+	}
+
+	room.AddParticipant(participant)
+	return nil
 }
 
 // LeaveRoom implements [core.RoomService].
-func (r *RoomSVC) LeaveRoom(roomID int, participant core.Participant) error {
-	panic("unimplemented")
+func (r *RoomSVC) LeaveRoom(roomID string, participant core.Participant) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	room, ok := r.rooms[roomID]
+	if !ok {
+		return fmt.Errorf("room %s not found", roomID)
+	}
+
+	room.RemoveParticipant(participant)
+	if len(room.Participants) == 0 {
+		delete(r.rooms, roomID)
+	}
+	return nil
 }
 
-func NewRoomSVC(roomModel core.RoomModel, roomWSModel core.RoomWSModel, whiteboard core.WhiteboardModel) *RoomSVC {
-	return &RoomSVC{
-		RoomModel:   roomModel,
-		RoomWSModel: roomWSModel,
-		Whiteboard:  whiteboard,
+// BroadcastToRoom implements [core.RoomService].
+func (r *RoomSVC) BroadcastToRoom(roomID string, message string) error {
+	r.mu.RLock()
+	room, ok := r.rooms[roomID]
+	if !ok {
+		r.mu.RUnlock()
+		return fmt.Errorf("room %s not found", roomID)
 	}
+
+	participants := make([]core.Participant, len(room.Participants))
+	copy(participants, room.Participants)
+	r.mu.RUnlock()
+
+	for _, participant := range participants {
+		participant.Notify(message)
+	}
+
+	return nil
 }
 
 var _ core.RoomService = (*RoomSVC)(nil)

@@ -54,13 +54,13 @@ func Handler(opts ...Option) *gin.Engine {
 	authController := controllers.NewAuthController(&service.UserSVC{
 		Model: &model.User{}})
 	drawingController := controllers.DrawingController{
-		RoomService: &service.RoomSVC{},
+		RoomService: service.NewRoomSVC(),
 	}
 
 	v1 := r.Group("/v1")
 
 	// user routes
-	v1.GET("/user/:id", userController.GetUser, currentAuthMiddleware)
+	v1.GET("/user/:id", currentAuthMiddleware, userController.GetUser)
 
 	// whiteboard routes
 	v1.GET("/whiteboards", whiteboardController.GetWhiteboardByUserId)

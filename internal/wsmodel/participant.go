@@ -22,17 +22,35 @@ func NewParticipant(userID uint, client *Client) *Participant {
 	}
 }
 
+func (p *Participant) Notify(message string) {
+	if p == nil || p.client == nil || *p.client == nil {
+		return
+	}
+
+	if err := (*p.client).WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+		log.Println("WriteMessage error:", err)
+	}
+}
+
 func (p *Participant) WriteMessage(data []byte) error {
+	if p == nil || p.client == nil || *p.client == nil {
+		return fmt.Errorf("websocket client is not initialized")
+	}
+
 	return (*p.client).WriteMessage(websocket.TextMessage, data)
 }
 
 func (p *Participant) Close() error {
+	if p == nil || p.client == nil || *p.client == nil {
+		return nil
+	}
+
 	return (*p.client).Close()
 }
 
 func (p *Participant) ReadMessage(
 	ctx context.Context,
-	ch chan []byte,
+	onMessage func([]byte),
 ) {
 	for {
 		select {
@@ -44,11 +62,11 @@ func (p *Participant) ReadMessage(
 			if err != nil {
 				log.Println("ReadMessage error:", err)
 				log.Println("Closing participant connection")
-				break
+				return
 			}
 
 			fmt.Println("Received message from participant:", string(message))
-			ch <- message
+			onMessage(message)
 		}
 	}
 }

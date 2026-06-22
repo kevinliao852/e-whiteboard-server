@@ -1,10 +1,8 @@
 package controllers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/kevinliao852/e-whiteboard-server/internal/core"
@@ -19,17 +17,13 @@ type DrawingController struct {
 }
 
 // Draw handles WebSocket connections for a specific room.
-// After upgrading the HTTP connection to a WebSocket, it manages client registration,
+// After upgrading the HTTP connection to a WebSocket, it manages client registration.
 func (dc DrawingController) Draw() gin.HandlerFunc {
-	var rooms = sync.Map{}
-	roomCtx := context.Background()
-
 	return func(ctx *gin.Context) {
 		requestedRoomID := ctx.Param("id")
 		roomID := resolveRoomID(ctx)
 
-		currentRoom, err := dc.createRoom(roomCtx, &rooms, roomID)
-		if err != nil {
+		if _, err := dc.RoomService.CreateRoom(roomID); err != nil {
 			log.Printf("failed to create or load room: %v", err)
 			return
 		}
@@ -48,18 +42,28 @@ func (dc DrawingController) Draw() gin.HandlerFunc {
 			}
 		}
 
-		currentRoom.Register <- participant
+		if err := dc.RoomService.JoinRoom(roomID, participant); err != nil {
+			log.Printf("failed to join room: %v", err)
+			_ = participant.Close()
+			return
+		}
+
 		defer func() {
-			currentRoom.Unregister <- participant
+			if err := dc.RoomService.LeaveRoom(roomID, participant); err != nil {
+				log.Printf("failed to leave room: %v", err)
+			}
 			_ = participant.Close()
 		}()
 
-		participant.ReadMessage(ctx, currentRoom.Broadcast)
+		participant.ReadMessage(ctx.Request.Context(), func(message []byte) {
+			if err := dc.RoomService.BroadcastToRoom(roomID, string(message)); err != nil {
+				log.Printf("failed to broadcast message: %v", err)
+			}
+		})
 	}
 }
 
 func createParticipant(ctx *gin.Context) (*wsmodel.Participant, error) {
-
 	hub := wsmodel.NewWSHub()
 	client, err := hub.NewClient(ctx.Writer, ctx.Request)
 	if err != nil {
@@ -79,28 +83,7 @@ func resolveRoomID(ctx *gin.Context) string {
 	return fmt.Sprintf("%d", time.Now().UnixNano())
 }
 
-func (dc DrawingController) createRoom(ctx context.Context, rooms *sync.Map, id string) (*wsmodel.Room, error) {
-	newRoom := wsmodel.NewRoom(id)
-
-	actual, loaded := rooms.LoadOrStore(id, newRoom)
-
-	r, ok := actual.(*wsmodel.Room)
-	if !ok {
-		return nil, fmt.Errorf("invalid room type for id=%s", id)
-	}
-
-	if !loaded {
-		go func() {
-			r.Run(ctx)
-			rooms.Delete(id)
-		}()
-		log.Printf("Created and started new room with id=%s", id)
-	}
-
-	return r, nil
-}
-
-func (dc DrawingController) NotifyRoomCreated(participant *wsmodel.Participant, roomID string) error {
+func (dc DrawingController) NotifyRoomCreated(participant core.Participant, roomID string) error {
 	message, err := json.Marshal(wsmodel.Message{
 		Scope: string(wsmodel.ScopeTypeLobby),
 		Data: gin.H{
@@ -111,5 +94,6 @@ func (dc DrawingController) NotifyRoomCreated(participant *wsmodel.Participant, 
 		return err
 	}
 
-	return participant.WriteMessage(message)
+	participant.Notify(string(message))
+	return nil
 }

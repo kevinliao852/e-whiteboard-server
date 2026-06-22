@@ -1,7 +1,7 @@
 package core
 
 type Room struct {
-	ID           int
+	ID           string
 	Participants []Participant
 }
 
@@ -30,18 +30,18 @@ func (r *Room) RemoveParticipant(p Participant) {
 
 type RoomModel interface {
 	Create(room *Room) error
-	GetByID(roomID int) (*Room, error)
+	GetByID(roomID string) (*Room, error)
 }
 
 type RoomWSModel interface {
-	AddToRoom(roomID int, participant Participant) error
-	RemoveFromRoom(roomID int, participant Participant) error
-	BroadcastToRoom(roomID int, message string) error
+	AddToRoom(roomID string, participant Participant) error
+	RemoveFromRoom(roomID string, participant Participant) error
+	BroadcastToRoom(roomID string, message string) error
 }
 
 type RoomService interface {
-	CreateRoom() (*Room, error)
-	JoinRoom(roomID int, participant Participant) error
-	LeaveRoom(roomID int, participant Participant) error
-	BroadcastToRoom(roomID int, message string) error
+	CreateRoom(roomID string) (*Room, error)
+	JoinRoom(roomID string, participant Participant) error
+	LeaveRoom(roomID string, participant Participant) error
+	BroadcastToRoom(roomID string, message string) error
 }
