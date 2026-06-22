@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
+	"github.com/kevinliao852/e-whiteboard-server/internal/adapter/db"
 	"github.com/kevinliao852/e-whiteboard-server/internal/database"
-	"github.com/kevinliao852/e-whiteboard-server/internal/model"
 	"github.com/kevinliao852/e-whiteboard-server/internal/route"
 	"github.com/kevinliao852/e-whiteboard-server/pkg/config"
 
@@ -49,17 +49,17 @@ func init() {
 		log.Fatal(err.Error())
 	}
 
-	err = database.DB.AutoMigrate(&model.User{})
+	err = database.DB.AutoMigrate(&db.User{})
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	err = database.DB.AutoMigrate(&model.Whiteboard{})
+	err = database.DB.AutoMigrate(&db.Whiteboard{})
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	err = database.DB.AutoMigrate(&model.WhiteboardCanvasData{})
+	err = database.DB.AutoMigrate(&db.WhiteboardCanvasData{})
 	if err != nil {
 		log.Fatal(err.Error())
 	}

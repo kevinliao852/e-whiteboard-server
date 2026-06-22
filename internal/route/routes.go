@@ -3,9 +3,10 @@ package route
 import (
 	"os"
 
-	"github.com/kevinliao852/e-whiteboard-server/internal/http/controllers"
-	"github.com/kevinliao852/e-whiteboard-server/internal/http/middlewares"
-	"github.com/kevinliao852/e-whiteboard-server/internal/model"
+	"github.com/kevinliao852/e-whiteboard-server/internal/adapter/db"
+	"github.com/kevinliao852/e-whiteboard-server/internal/adapter/state"
+	webcontrollers "github.com/kevinliao852/e-whiteboard-server/internal/adapter/web/controllers"
+	"github.com/kevinliao852/e-whiteboard-server/internal/adapter/web/middlewares"
 	"github.com/kevinliao852/e-whiteboard-server/internal/service"
 
 	"github.com/gin-contrib/cors"
@@ -47,15 +48,15 @@ func Handler(opts ...Option) *gin.Engine {
 		log.Info("CORS is activated")
 	}
 
-	whiteboardController := controllers.NewWhiteboardController(&service.WhiteboardSVC{
-		Model: &model.Whiteboard{}})
-	userController := controllers.NewUserController(&service.UserSVC{
-		Model: &model.User{}})
-	authController := controllers.NewAuthController(&service.UserSVC{
-		Model: &model.User{}})
-	drawingController := controllers.DrawingController{
-		RoomService:    service.NewRoomSVC(),
-		DrawingService: service.NewDrawingSVC(&model.WhiteboardCanvasData{}),
+	whiteboardController := webcontrollers.NewWhiteboardController(&service.WhiteboardSVC{
+		Model: &db.Whiteboard{}})
+	userController := webcontrollers.NewUserController(&service.UserSVC{
+		Model: &db.User{}})
+	authController := webcontrollers.NewAuthController(&service.UserSVC{
+		Model: &db.User{}})
+	drawingController := webcontrollers.DrawingController{
+		RoomService:    state.NewRoomState(),
+		DrawingService: service.NewDrawingSVC(&db.WhiteboardCanvasData{}),
 	}
 
 	v1 := r.Group("/v1")

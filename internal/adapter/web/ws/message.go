@@ -1,4 +1,4 @@
-package wsmodel
+package ws
 
 type Message struct {
 	Scope string `json:"scope"`

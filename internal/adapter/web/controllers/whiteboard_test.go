@@ -61,7 +61,7 @@ func TestWhiteboardController_GetWhiteboardByUserId(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var resp GetWhiteboardByIdResponse
 		err := json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.NoError(t, err)
@@ -84,7 +84,7 @@ func TestWhiteboardController_GetWhiteboardByUserId(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
-	
+
 	t.Run("ServiceError", func(t *testing.T) {
 		mockService := new(MockWhiteboardService)
 		mockService.On("GetUserWhiteboards", uint(1)).Return(nil, errors.New("db error"))
@@ -111,7 +111,7 @@ func TestWhiteboardController_CreateWhiteboard(t *testing.T) {
 			UserID: 1,
 			Name:   "New Board",
 		}
-		
+
 		// Match any core.Whiteboard with correct UserId and Name
 		mockService.On("CreateWhiteboard", mock.MatchedBy(func(wb core.Whiteboard) bool {
 			return wb.UserId == 1 && wb.Name == "New Board"
@@ -159,7 +159,7 @@ func TestWhiteboardController_DeleteWhiteboard(t *testing.T) {
 
 		reqBody := DeleteWhiteboardRequest{WhiteboardID: 10}
 		body, _ := json.Marshal(reqBody)
-		
+
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("DELETE", "/whiteboards/10", bytes.NewBuffer(body))
 		req.Header.Set("Content-Type", "application/json")

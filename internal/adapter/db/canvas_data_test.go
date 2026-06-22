@@ -1,8 +1,9 @@
-package model
+package db
 
 import (
 	"testing"
 
+	"github.com/kevinliao852/e-whiteboard-server/internal/core"
 	"github.com/kevinliao852/e-whiteboard-server/internal/database"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
@@ -30,7 +31,13 @@ func TestCreate(t *testing.T) {
 		EndY:         40,
 	}
 
-	err := Create(wb)
+	err := wb.Create(&core.CanvasData{
+		WhiteboardId: 1,
+		StartX:       10,
+		EndX:         20,
+		StartY:       30,
+		EndY:         40,
+	})
 	assert.NoError(t, err)
 	assert.NotZero(t, wb.ID)
 	assert.Equal(t, uint(1), wb.WhiteboardId)

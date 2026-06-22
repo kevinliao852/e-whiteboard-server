@@ -7,8 +7,8 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/kevinliao852/e-whiteboard-server/internal/model"
-	"github.com/kevinliao852/e-whiteboard-server/internal/wsmodel"
+	"github.com/kevinliao852/e-whiteboard-server/internal/adapter/db"
+	"github.com/kevinliao852/e-whiteboard-server/internal/adapter/web/ws"
 )
 
 type WhiteboardSaveWorker struct {
@@ -22,13 +22,13 @@ type WhiteboardMessage struct {
 
 // SaveMessage saves a whiteboard message to the database.
 func (swm *WhiteboardSaveWorker) SaveMessage(message []byte) error {
-	var parsedMsg wsmodel.Message
+	var parsedMsg ws.Message
 	if err := json.Unmarshal(message, &parsedMsg); err != nil {
 		log.Println("[SaveMessage] Error parsing message", err, string(message))
 		return err
 	}
 
-	if parsedMsg.Scope != string(wsmodel.ScopeTypeWhiteboard) {
+	if parsedMsg.Scope != string(ws.ScopeTypeWhiteboard) {
 		return fmt.Errorf("[SaveMessage] unsupported scope: %s", parsedMsg.Scope)
 	}
 
@@ -47,7 +47,7 @@ func (swm *WhiteboardSaveWorker) SaveMessage(message []byte) error {
 		return fmt.Errorf("[SaveMessage] WhiteboardMessage Unmarshal failed %+v", err)
 	}
 
-	if err = model.Create(&model.WhiteboardCanvasData{
+	if err = db.Create(&db.WhiteboardCanvasData{
 		StartX:       wmd.Start[0],
 		StartY:       wmd.Start[1],
 		EndX:         wmd.End[0],
@@ -70,7 +70,7 @@ func NewWhiteboardSaveWorker(roomId string) chan []byte {
 	errChan := make(chan error)
 
 	// use wshub.StoreMessageToDB to save message to db
-	wsmodel.StartMessagePersistenceWorker(
+	ws.StartMessagePersistenceWorker(
 		context.Background(),
 		messageChannel, &storeWhiteboardMessage, &errChan)
 
@@ -83,9 +83,9 @@ func NewWhiteboardSaveWorker(roomId string) chan []byte {
 	return messageChannel
 }
 
-func ParseMessage(rawMessage []byte) (wsmodel.Message, error) {
+func ParseMessage(rawMessage []byte) (ws.Message, error) {
 
-	var message wsmodel.Message
+	var message ws.Message
 	parseErr := json.Unmarshal(rawMessage, &message)
 
 	if parseErr != nil {

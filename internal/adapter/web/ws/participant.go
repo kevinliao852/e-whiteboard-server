@@ -1,4 +1,4 @@
-package wsmodel
+package ws
 
 import (
 	"context"

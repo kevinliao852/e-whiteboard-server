@@ -1,4 +1,4 @@
-package service
+package state
 
 import (
 	"testing"
@@ -14,8 +14,8 @@ func (p *fakeParticipant) Notify(message string) {
 	p.messages = append(p.messages, message)
 }
 
-func TestRoomSVC_CreateJoinBroadcastLeave(t *testing.T) {
-	svc := NewRoomSVC()
+func TestRoomState_CreateJoinBroadcastLeave(t *testing.T) {
+	svc := NewRoomState()
 	participant := &fakeParticipant{}
 
 	room, err := svc.CreateRoom("room-1")

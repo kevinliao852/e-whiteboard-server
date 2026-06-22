@@ -1,4 +1,4 @@
-package service
+package state
 
 import (
 	"fmt"
@@ -7,24 +7,24 @@ import (
 	"github.com/kevinliao852/e-whiteboard-server/internal/core"
 )
 
-type RoomSVC struct {
+type RoomState struct {
 	mu    sync.RWMutex
 	rooms map[string]*core.Room
 }
 
-func NewRoomSVC() *RoomSVC {
-	return &RoomSVC{
+func NewRoomState() *RoomState {
+	return &RoomState{
 		rooms: make(map[string]*core.Room),
 	}
 }
 
-func (r *RoomSVC) ensureRooms() {
+func (r *RoomState) ensureRooms() {
 	if r.rooms == nil {
 		r.rooms = make(map[string]*core.Room)
 	}
 }
 
-func (r *RoomSVC) getOrCreateRoom(roomID string) *core.Room {
+func (r *RoomState) getOrCreateRoom(roomID string) *core.Room {
 	r.ensureRooms()
 
 	room, ok := r.rooms[roomID]
@@ -41,7 +41,7 @@ func (r *RoomSVC) getOrCreateRoom(roomID string) *core.Room {
 }
 
 // CreateRoom implements [core.RoomService].
-func (r *RoomSVC) CreateRoom(roomID string) (*core.Room, error) {
+func (r *RoomState) CreateRoom(roomID string) (*core.Room, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -50,7 +50,7 @@ func (r *RoomSVC) CreateRoom(roomID string) (*core.Room, error) {
 }
 
 // JoinRoom implements [core.RoomService].
-func (r *RoomSVC) JoinRoom(roomID string, participant core.Participant) error {
+func (r *RoomState) JoinRoom(roomID string, participant core.Participant) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -66,7 +66,7 @@ func (r *RoomSVC) JoinRoom(roomID string, participant core.Participant) error {
 }
 
 // LeaveRoom implements [core.RoomService].
-func (r *RoomSVC) LeaveRoom(roomID string, participant core.Participant) error {
+func (r *RoomState) LeaveRoom(roomID string, participant core.Participant) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -83,7 +83,7 @@ func (r *RoomSVC) LeaveRoom(roomID string, participant core.Participant) error {
 }
 
 // BroadcastToRoom implements [core.RoomService].
-func (r *RoomSVC) BroadcastToRoom(roomID string, message string) error {
+func (r *RoomState) BroadcastToRoom(roomID string, message string) error {
 	r.mu.RLock()
 	room, ok := r.rooms[roomID]
 	if !ok {
@@ -102,4 +102,4 @@ func (r *RoomSVC) BroadcastToRoom(roomID string, message string) error {
 	return nil
 }
 
-var _ core.RoomService = (*RoomSVC)(nil)
+var _ core.RoomService = (*RoomState)(nil)

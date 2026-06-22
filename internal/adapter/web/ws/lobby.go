@@ -1,4 +1,4 @@
-package wsmodel
+package ws
 
 // Lobby represents a collection of Rooms.
 type Lobby struct {

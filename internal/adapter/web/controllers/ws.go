@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kevinliao852/e-whiteboard-server/internal/adapter/web/ws"
 	"github.com/kevinliao852/e-whiteboard-server/internal/core"
-	"github.com/kevinliao852/e-whiteboard-server/internal/wsmodel"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -67,13 +67,13 @@ func (dc DrawingController) Draw() gin.HandlerFunc {
 	}
 }
 
-func createParticipant(ctx *gin.Context) (*wsmodel.Participant, error) {
-	hub := wsmodel.NewWSHub()
+func createParticipant(ctx *gin.Context) (*ws.Participant, error) {
+	hub := ws.NewWSHub()
 	client, err := hub.NewClient(ctx.Writer, ctx.Request)
 	if err != nil {
 		return nil, err
 	}
-	participant := wsmodel.NewParticipant(0, &client)
+	participant := ws.NewParticipant(0, &client)
 
 	return participant, nil
 }
@@ -88,8 +88,8 @@ func resolveRoomID(ctx *gin.Context) string {
 }
 
 func (dc DrawingController) NotifyRoomCreated(participant core.Participant, roomID string) error {
-	message, err := json.Marshal(wsmodel.Message{
-		Scope: string(wsmodel.ScopeTypeLobby),
+	message, err := json.Marshal(ws.Message{
+		Scope: string(ws.ScopeTypeLobby),
 		Data: gin.H{
 			"room_id": roomID,
 		},

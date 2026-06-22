@@ -33,12 +33,6 @@ type RoomModel interface {
 	GetByID(roomID string) (*Room, error)
 }
 
-type RoomWSModel interface {
-	AddToRoom(roomID string, participant Participant) error
-	RemoveFromRoom(roomID string, participant Participant) error
-	BroadcastToRoom(roomID string, message string) error
-}
-
 type RoomService interface {
 	CreateRoom(roomID string) (*Room, error)
 	JoinRoom(roomID string, participant Participant) error
