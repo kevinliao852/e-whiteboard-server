@@ -1,5 +1,5 @@
 dev:
-	go run main.go
+	go run ./cmd/...
 
 format:
 	gofmt -w ./cmd ./internal ./pkg
