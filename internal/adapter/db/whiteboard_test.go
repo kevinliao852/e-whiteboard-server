@@ -18,6 +18,8 @@ func setupWhiteboardTestDB(t *testing.T) {
 
 	err = database.DB.AutoMigrate(&Whiteboard{})
 	assert.NoError(t, err)
+	err = database.DB.AutoMigrate(&WhiteboardCanvasData{})
+	assert.NoError(t, err)
 }
 
 func TestWhiteboardModel_CreateAndGetByUserId(t *testing.T) {
@@ -33,4 +35,36 @@ func TestWhiteboardModel_CreateAndGetByUserId(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, boards, 1)
 	assert.Equal(t, "Board 1", boards[0].Name)
+}
+
+func TestWhiteboardModel_DeleteRemovesCanvasData(t *testing.T) {
+	setupWhiteboardTestDB(t)
+
+	err := database.DB.Create(&Whiteboard{
+		Id:   10,
+		Name: "Board 10",
+	}).Error
+	assert.NoError(t, err)
+
+	err = database.DB.Create(&WhiteboardCanvasData{
+		WhiteboardId: 10,
+		StartX:       1,
+		StartY:       2,
+		EndX:         3,
+		EndY:         4,
+	}).Error
+	assert.NoError(t, err)
+
+	err = DeleteWhiteboard(10)
+	assert.NoError(t, err)
+
+	var whiteboards []Whiteboard
+	err = database.DB.Find(&whiteboards).Error
+	assert.NoError(t, err)
+	assert.Len(t, whiteboards, 0)
+
+	var canvasRows []WhiteboardCanvasData
+	err = database.DB.Find(&canvasRows).Error
+	assert.NoError(t, err)
+	assert.Len(t, canvasRows, 0)
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/kevinliao852/e-whiteboard-server/internal/core"
 	"github.com/kevinliao852/e-whiteboard-server/internal/database"
+	"gorm.io/gorm"
 )
 
 // Whiteboard represents the whiteboard model in the database.
@@ -25,10 +26,17 @@ func CreateWhiteboard(wb *core.Whiteboard) error {
 }
 
 func DeleteWhiteboard(id uint) error {
-	if err := database.DB.Where("id = ?", id).Delete(&Whiteboard{}).Error; err != nil {
-		return err
-	}
-	return nil
+	return database.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("whiteboard_id = ?", id).Delete(&WhiteboardCanvasData{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("id = ?", id).Delete(&Whiteboard{}).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
 
 func GetWhiteboardsByUserID(userId uint) ([]*core.Whiteboard, error) {

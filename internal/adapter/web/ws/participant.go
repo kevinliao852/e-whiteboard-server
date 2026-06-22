@@ -24,6 +24,7 @@ func NewParticipant(userID uint, client *Client) *Participant {
 
 func (p *Participant) Notify(message string) {
 	if p == nil || p.client == nil || *p.client == nil {
+		fmt.Println("Participant client is not initialized, skipping Notify")
 		return
 	}
 

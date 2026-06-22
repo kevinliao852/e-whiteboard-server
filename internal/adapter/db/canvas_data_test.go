@@ -38,10 +38,10 @@ func TestCreate(t *testing.T) {
 	assert.Len(t, rows, 1)
 	assert.NotZero(t, rows[0].ID)
 	assert.Equal(t, uint(1), rows[0].WhiteboardId)
-	assert.Equal(t, uint(10), rows[0].StartX)
-	assert.Equal(t, uint(20), rows[0].EndX)
-	assert.Equal(t, uint(30), rows[0].StartY)
-	assert.Equal(t, uint(40), rows[0].EndY)
+	assert.Equal(t, 10, rows[0].StartX)
+	assert.Equal(t, 20, rows[0].EndX)
+	assert.Equal(t, 30, rows[0].StartY)
+	assert.Equal(t, 40, rows[0].EndY)
 }
 
 func TestGetByWhiteboardID(t *testing.T) {
@@ -63,4 +63,22 @@ func TestGetByWhiteboardID(t *testing.T) {
 	assert.Equal(t, 1, got[0].WhiteboardId)
 	assert.Equal(t, 10, got[0].StartX)
 	assert.Equal(t, 12, got[1].StartX)
+}
+
+func TestGetByWhiteboardID_AllowsNegativeCoordinates(t *testing.T) {
+	setupCanvasDataTestDB(t)
+
+	rows := []*WhiteboardCanvasData{
+		{WhiteboardId: 1, StartX: -10, StartY: 20, EndX: 30, EndY: -40},
+	}
+	for _, row := range rows {
+		err := database.DB.Create(row).Error
+		assert.NoError(t, err)
+	}
+
+	got, err := GetCanvasDataByWhiteboardID(1)
+	assert.NoError(t, err)
+	assert.Len(t, got, 1)
+	assert.Equal(t, -10, got[0].StartX)
+	assert.Equal(t, -40, got[0].EndY)
 }

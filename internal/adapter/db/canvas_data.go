@@ -10,10 +10,10 @@ import (
 type WhiteboardCanvasData struct {
 	ID           uint
 	WhiteboardId uint `json:"whiteboard_id" binding:"required"`
-	StartX       uint `json:"start_x" binding:"required"`
-	EndX         uint `json:"end_x" binding:"required"`
-	StartY       uint `json:"start_y" binding:"required"`
-	EndY         uint `json:"end_y" binding:"required"`
+	StartX       int  `json:"start_x" binding:"required"`
+	EndX         int  `json:"end_x" binding:"required"`
+	StartY       int  `json:"start_y" binding:"required"`
+	EndY         int  `json:"end_y" binding:"required"`
 	CreatedAt    time.Time
 	UpdateAt     time.Time
 }
@@ -21,10 +21,10 @@ type WhiteboardCanvasData struct {
 func CreateCanvasData(data *core.CanvasData) error {
 	row := &WhiteboardCanvasData{
 		WhiteboardId: uint(data.WhiteboardId),
-		StartX:       uint(data.StartX),
-		EndX:         uint(data.EndX),
-		StartY:       uint(data.StartY),
-		EndY:         uint(data.EndY),
+		StartX:       data.StartX,
+		EndX:         data.EndX,
+		StartY:       data.StartY,
+		EndY:         data.EndY,
 	}
 
 	if err := database.DB.Create(row).Error; err != nil {
@@ -48,10 +48,10 @@ func GetCanvasDataByWhiteboardID(whiteboardID int) ([]core.CanvasData, error) {
 		result = append(result, core.CanvasData{
 			ID:           int(row.ID),
 			WhiteboardId: int(row.WhiteboardId),
-			StartX:       int(row.StartX),
-			EndX:         int(row.EndX),
-			StartY:       int(row.StartY),
-			EndY:         int(row.EndY),
+			StartX:       row.StartX,
+			EndX:         row.EndX,
+			StartY:       row.StartY,
+			EndY:         row.EndY,
 			CreatedAt:    row.CreatedAt,
 			UpdateAt:     row.UpdateAt,
 		})
