@@ -14,6 +14,13 @@ type Identity struct {
 	IsGuest     bool
 }
 
+type SessionSnapshot struct {
+	UserID  int
+	IsGuest bool
+	Role    string
+	Email   string
+}
+
 func FromContext(c *gin.Context) (Identity, bool) {
 	return FromSession(sessions.Default(c))
 }
@@ -64,4 +71,40 @@ func FromSession(session sessions.Session) (Identity, bool) {
 	}
 
 	return identity, true
+}
+
+func DebugSessionSnapshot(c *gin.Context) SessionSnapshot {
+	session := sessions.Default(c)
+	snapshot := SessionSnapshot{}
+
+	switch v := session.Get("user_id").(type) {
+	case int:
+		snapshot.UserID = v
+	case int64:
+		snapshot.UserID = int(v)
+	case uint:
+		snapshot.UserID = int(v)
+	case uint64:
+		snapshot.UserID = int(v)
+	case float64:
+		snapshot.UserID = int(v)
+	case string:
+		if id, err := strconv.Atoi(v); err == nil {
+			snapshot.UserID = id
+		}
+	}
+
+	if guest, ok := session.Get("is_guest").(bool); ok {
+		snapshot.IsGuest = guest
+	}
+
+	if role, ok := session.Get("role").(string); ok {
+		snapshot.Role = role
+	}
+
+	if email, ok := session.Get("email").(string); ok {
+		snapshot.Email = email
+	}
+
+	return snapshot
 }

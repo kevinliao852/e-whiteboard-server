@@ -9,12 +9,28 @@ import (
 )
 
 func AuthRequired(c *gin.Context) {
-	if _, ok := authstate.FromContext(c); !ok {
-		log.Info("Unauthorized access")
+	identity, ok := authstate.FromContext(c)
+	if !ok {
+		session := authstate.DebugSessionSnapshot(c)
+		log.WithFields(log.Fields{
+			"cookie_present": c.Request.Header.Get("Cookie") != "",
+			"session_userID": session.UserID,
+			"session_guest":  session.IsGuest,
+			"session_role":   session.Role,
+			"session_email":  session.Email != "",
+			"origin":         c.Request.Header.Get("Origin"),
+			"host":           c.Request.Host,
+		}).Info("Unauthorized access")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
+
+	log.WithFields(log.Fields{
+		"user_id":    identity.UserID,
+		"is_guest":   identity.IsGuest,
+		"has_cookie": c.Request.Header.Get("Cookie") != "",
+	}).Debug("Authorized request")
 
 	c.Next()
 }

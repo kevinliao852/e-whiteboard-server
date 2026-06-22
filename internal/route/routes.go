@@ -1,7 +1,10 @@
 package route
 
 import (
+	"net/http"
+	"net/url"
 	"os"
+	"strings"
 
 	"github.com/kevinliao852/e-whiteboard-server/internal/adapter/db"
 	"github.com/kevinliao852/e-whiteboard-server/internal/adapter/state"
@@ -32,13 +35,14 @@ func Handler(opts ...Option) *gin.Engine {
 
 	r := gin.New()
 	store := cookie.NewStore([]byte(os.Getenv("SESSION_SECRET")))
+	store.Options(sessionOptions(os.Getenv("HOST_AllOW_ORIGINS")))
 
 	r.Use(sessions.Sessions("whiteboardsession", store))
 	r.Use(middlewares.LoggerMiddleWare)
 
 	if options.UseCORS {
 		config := cors.DefaultConfig()
-		config.AllowOrigins = []string{os.Getenv("HOST_AllOW_ORIGINS")}
+		config.AllowOrigins = splitAndTrimCSV(os.Getenv("HOST_AllOW_ORIGINS"))
 		// config.AllowHeaders = []string{os.Getenv("HOST_AllOW_HEADERS")}
 		config.AllowHeaders = []string{"Content-Type", "Authorization"}
 		config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
@@ -97,4 +101,68 @@ func Handler(opts ...Option) *gin.Engine {
 	wsGroup.GET("/drawing/:id", drawingController.Draw())
 
 	return r
+}
+
+func splitAndTrimCSV(raw string) []string {
+	if raw == "" {
+		return nil
+	}
+
+	parts := strings.Split(raw, ",")
+	values := make([]string, 0, len(parts))
+
+	for _, part := range parts {
+		value := strings.TrimSpace(part)
+		if value != "" {
+			values = append(values, value)
+		}
+	}
+
+	return values
+}
+
+func sessionOptions(rawOrigins string) sessions.Options {
+	options := sessions.Options{
+		Path:     "/",
+		MaxAge:   86400 * 7,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   false,
+	}
+
+	if requiresCrossSiteCookie(splitAndTrimCSV(rawOrigins)) {
+		options.SameSite = http.SameSiteNoneMode
+		options.Secure = true
+	}
+
+	return options
+}
+
+func requiresCrossSiteCookie(origins []string) bool {
+	for _, origin := range origins {
+		if isHTTPSOrigin(origin) && !isLoopbackOrigin(origin) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isHTTPSOrigin(origin string) bool {
+	parsed, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+
+	return strings.EqualFold(parsed.Scheme, "https")
+}
+
+func isLoopbackOrigin(origin string) bool {
+	parsed, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+
+	host := strings.ToLower(parsed.Hostname())
+	return host == "localhost" || host == "127.0.0.1" || host == "0.0.0.0"
 }

@@ -126,6 +126,15 @@ func (ac AuthController) Login(id string) gin.HandlerFunc {
 			return
 		}
 
+		log.WithFields(log.Fields{
+			"user_id":        user.ID,
+			"session_userID": session.Get("user_id"),
+			"session_guest":  session.Get("is_guest"),
+			"has_cookie":     c.Request.Header.Get("Cookie") != "",
+			"origin":         c.Request.Header.Get("Origin"),
+			"set_cookie":     c.Writer.Header().Get("Set-Cookie") != "",
+		}).Info("login session saved")
+
 		c.JSON(http.StatusOK, AuthResponse{
 			ID:          user.ID,
 			Email:       user.Email,
