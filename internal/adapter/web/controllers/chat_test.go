@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/kevinliao852/e-whiteboard-server/internal/core"
 )
@@ -30,7 +32,7 @@ func (s *chatServiceStub) ListMessages(roomID string) []core.ChatMessage {
 	return s.messages[roomID]
 }
 
-func (s *chatServiceStub) AppendMessage(roomID string, message string) core.ChatMessage {
+func (s *chatServiceStub) AppendMessage(roomID string, senderID int, senderName string, message string) core.ChatMessage {
 	return core.ChatMessage{}
 }
 
@@ -41,20 +43,26 @@ func TestChatController_GetChatMessages(t *testing.T) {
 		messages: map[string][]core.ChatMessage{
 			"design-review": {
 				{
-					ID:      1,
-					RoomID:  "design-review",
-					Message: "Let's review the navigation flow before we finalize the layout.",
+					ID:         1,
+					RoomID:     "design-review",
+					SenderID:   1,
+					SenderName: "Test User",
+					Message:    "Let's review the navigation flow before we finalize the layout.",
 				},
 				{
-					ID:      2,
-					RoomID:  "design-review",
-					Message: "I'll mark the confusing steps directly on the board.",
+					ID:         2,
+					RoomID:     "design-review",
+					SenderID:   2,
+					SenderName: "Another User",
+					Message:    "I'll mark the confusing steps directly on the board.",
 				},
 			},
 		},
 	})
 
 	router := gin.Default()
+	store := cookie.NewStore([]byte("test-secret"))
+	router.Use(sessions.Sessions("testsession", store))
 	router.GET("/chat-messages", ctrl.GetChatMessages)
 
 	t.Run("returns history", func(t *testing.T) {
@@ -76,6 +84,12 @@ func TestChatController_GetChatMessages(t *testing.T) {
 		}
 		if response[0].RoomID != "design-review" {
 			t.Fatalf("expected room id design-review, got %q", response[0].RoomID)
+		}
+		if response[0].SenderID != 1 {
+			t.Fatalf("expected sender id 1, got %d", response[0].SenderID)
+		}
+		if response[0].SenderName != "Test User" {
+			t.Fatalf("expected sender name Test User, got %q", response[0].SenderName)
 		}
 		if response[0].Message == "" {
 			t.Fatal("expected first message to be populated")

@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/kevinliao852/e-whiteboard-server/internal/core"
@@ -24,16 +25,15 @@ func NewWhiteboardController(svc core.WhiteboardService) *WhiteboardController {
 	}
 }
 
-type GetWhiteboardByIdResponse struct {
-	IDs []uint `json:"ids"`
+type WhiteboardSummaryResponse struct {
+	ID        uint      `json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type CreateWhiteboardRequest struct {
 	Name string `json:"name" validate:"required,min=1,max=100"`
-}
-
-type DeleteWhiteboardRequest struct {
-	WhiteboardID uint `json:"whiteboard_id" validate:"required,gt=0"`
 }
 
 func (wc *WhiteboardController) GetWhiteboardByUserId(c *gin.Context) {
@@ -44,15 +44,20 @@ func (wc *WhiteboardController) GetWhiteboardByUserId(c *gin.Context) {
 		return
 	}
 
-	ids, err := wc.service.GetUserWhiteboards(uint(userID))
+	whiteboards, err := wc.service.GetUserWhiteboards(uint(userID))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create whiteboard"})
 		return
 	}
 
-	var response GetWhiteboardByIdResponse
-	for _, wb := range ids {
-		response.IDs = append(response.IDs, wb.Id)
+	response := make([]WhiteboardSummaryResponse, 0, len(whiteboards))
+	for _, wb := range whiteboards {
+		response = append(response, WhiteboardSummaryResponse{
+			ID:        wb.Id,
+			Name:      wb.Name,
+			CreatedAt: wb.CreatedAt,
+			UpdatedAt: wb.UpdatedAt,
+		})
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -95,19 +100,13 @@ func (wc *WhiteboardController) CreateWhiteboard(c *gin.Context) {
 }
 
 func (wc *WhiteboardController) DeleteWhiteboard(c *gin.Context) {
-	var req DeleteWhiteboardRequest
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON"})
-		return
-	}
-	if err := validate.Struct(req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+	whiteboardID, err := strconv.Atoi(c.Param("id"))
+	if err != nil || whiteboardID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid whiteboard id"})
 		return
 	}
 
-	err := wc.service.DeleteWhiteboard(req.WhiteboardID)
-	if err != nil {
+	if err := wc.service.DeleteWhiteboard(uint(whiteboardID)); err != nil {
 		c.String(http.StatusBadRequest, "Delete whiteboard service failed")
 		c.AbortWithStatus(http.StatusBadRequest)
 		return

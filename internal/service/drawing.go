@@ -11,15 +11,17 @@ import (
 )
 
 type DrawingSVC struct {
-	Model core.CanvasDataInterface
-	queue chan *core.CanvasData
-	once  sync.Once
+	CreateFn            func(data *core.CanvasData) error
+	GetByWhiteboardIDFn func(whiteboardID int) ([]core.CanvasData, error)
+	queue               chan *core.CanvasData
+	once                sync.Once
 }
 
-func NewDrawingSVC(model core.CanvasDataInterface) *DrawingSVC {
+func NewDrawingSVC(createFn func(data *core.CanvasData) error, getByWhiteboardIDFn func(whiteboardID int) ([]core.CanvasData, error)) *DrawingSVC {
 	svc := &DrawingSVC{
-		Model: model,
-		queue: make(chan *core.CanvasData, 100),
+		CreateFn:            createFn,
+		GetByWhiteboardIDFn: getByWhiteboardIDFn,
+		queue:               make(chan *core.CanvasData, 100),
 	}
 	svc.startWorker()
 	return svc
@@ -29,10 +31,10 @@ func (s *DrawingSVC) startWorker() {
 	s.once.Do(func() {
 		go func() {
 			for data := range s.queue {
-				if data == nil || s.Model == nil {
+				if data == nil || s.CreateFn == nil {
 					continue
 				}
-				if err := s.Model.Create(data); err != nil {
+				if err := s.CreateFn(data); err != nil {
 					log.Printf("failed to persist drawing data: %v", err)
 				}
 			}
@@ -79,11 +81,11 @@ func (s *DrawingSVC) Enqueue(roomID string, message []byte) error {
 }
 
 func (s *DrawingSVC) ListCanvasData(whiteboardID int) ([]core.CanvasData, error) {
-	if s == nil || s.Model == nil {
+	if s == nil || s.GetByWhiteboardIDFn == nil {
 		return nil, nil
 	}
 
-	return s.Model.GetByWhiteboardID(whiteboardID)
+	return s.GetByWhiteboardIDFn(whiteboardID)
 }
 
 func (s *DrawingSVC) parseCanvasData(roomID string, raw json.RawMessage) (*core.CanvasData, error) {

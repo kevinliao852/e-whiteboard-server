@@ -48,9 +48,10 @@ func TestWhiteboardController_GetWhiteboardByUserId(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		mockService := new(MockWhiteboardService)
+		now := time.Now()
 		expectedWbs := []*core.Whiteboard{
-			{Id: 1, UserId: 1, Name: "WB1"},
-			{Id: 2, UserId: 1, Name: "WB2"},
+			{Id: 1, UserId: 1, Name: "WB1", CreatedAt: now, UpdatedAt: now},
+			{Id: 2, UserId: 1, Name: "WB2", CreatedAt: now, UpdatedAt: now},
 		}
 		mockService.On("GetUserWhiteboards", uint(1)).Return(expectedWbs, nil)
 
@@ -72,12 +73,14 @@ func TestWhiteboardController_GetWhiteboardByUserId(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var resp GetWhiteboardByIdResponse
+		var resp []WhiteboardSummaryResponse
 		err := json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.NoError(t, err)
-		assert.Len(t, resp.IDs, 2)
-		assert.Equal(t, uint(1), resp.IDs[0])
-		assert.Equal(t, uint(2), resp.IDs[1])
+		assert.Len(t, resp, 2)
+		assert.Equal(t, uint(1), resp[0].ID)
+		assert.Equal(t, "WB1", resp[0].Name)
+		assert.Equal(t, uint(2), resp[1].ID)
+		assert.Equal(t, "WB2", resp[1].Name)
 
 		mockService.AssertExpectations(t)
 	})
@@ -203,15 +206,24 @@ func TestWhiteboardController_DeleteWhiteboard(t *testing.T) {
 		router := gin.Default()
 		router.DELETE("/whiteboards/:id", ctrl.DeleteWhiteboard)
 
-		reqBody := DeleteWhiteboardRequest{WhiteboardID: 10}
-		body, _ := json.Marshal(reqBody)
-
 		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("DELETE", "/whiteboards/10", bytes.NewBuffer(body))
-		req.Header.Set("Content-Type", "application/json")
+		req, _ := http.NewRequest("DELETE", "/whiteboards/10", nil)
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockService.AssertExpectations(t)
+	})
+
+	t.Run("InvalidPathID", func(t *testing.T) {
+		mockService := new(MockWhiteboardService)
+		ctrl := NewWhiteboardController(mockService)
+		router := gin.Default()
+		router.DELETE("/whiteboards/:id", ctrl.DeleteWhiteboard)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("DELETE", "/whiteboards/not-a-number", nil)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 }

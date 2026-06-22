@@ -43,7 +43,7 @@ func (m *fakeCanvasModel) GetByWhiteboardID(whiteboardID int) ([]core.CanvasData
 
 func TestDrawingSVC_EnqueueWhiteboardMessage(t *testing.T) {
 	model := &fakeCanvasModel{ch: make(chan *core.CanvasData, 1)}
-	svc := NewDrawingSVC(model)
+	svc := NewDrawingSVC(model.Create, model.GetByWhiteboardID)
 
 	message := map[string]any{
 		"scope": "whiteboard",
@@ -73,7 +73,7 @@ func TestDrawingSVC_EnqueueWhiteboardMessage(t *testing.T) {
 
 func TestDrawingSVC_IgnoreNonWhiteboardMessage(t *testing.T) {
 	model := &fakeCanvasModel{ch: make(chan *core.CanvasData, 1)}
-	svc := NewDrawingSVC(model)
+	svc := NewDrawingSVC(model.Create, model.GetByWhiteboardID)
 
 	message := map[string]any{
 		"scope": "lobby",
@@ -105,7 +105,7 @@ func TestDrawingSVC_ListCanvasData(t *testing.T) {
 			{ID: 3, WhiteboardId: 7, StartX: 12, StartY: 22, EndX: 32, EndY: 42},
 		},
 	}
-	svc := NewDrawingSVC(model)
+	svc := NewDrawingSVC(model.Create, model.GetByWhiteboardID)
 
 	got, err := svc.ListCanvasData(7)
 	if err != nil {

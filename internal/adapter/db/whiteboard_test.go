@@ -23,14 +23,13 @@ func setupWhiteboardTestDB(t *testing.T) {
 func TestWhiteboardModel_CreateAndGetByUserId(t *testing.T) {
 	setupWhiteboardTestDB(t)
 
-	model := &Whiteboard{}
-	err := model.Create(&core.Whiteboard{
+	err := CreateWhiteboard(&core.Whiteboard{
 		UserId: 1,
 		Name:   "Board 1",
 	})
 	assert.NoError(t, err)
 
-	boards, err := model.GetByUserId(1)
+	boards, err := GetWhiteboardsByUserID(1)
 	assert.NoError(t, err)
 	assert.Len(t, boards, 1)
 	assert.Equal(t, "Board 1", boards[0].Name)

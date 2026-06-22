@@ -29,14 +29,16 @@ func (s *ChatState) ListMessages(roomID string) []core.ChatMessage {
 	return result
 }
 
-func (s *ChatState) AppendMessage(roomID string, message string) core.ChatMessage {
+func (s *ChatState) AppendMessage(roomID string, senderID int, senderName string, message string) core.ChatMessage {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	chatMessage := core.ChatMessage{
-		ID:      s.nextID,
-		RoomID:  roomID,
-		Message: message,
+		ID:         s.nextID,
+		RoomID:     roomID,
+		SenderID:   senderID,
+		SenderName: senderName,
+		Message:    message,
 	}
 	s.nextID++
 

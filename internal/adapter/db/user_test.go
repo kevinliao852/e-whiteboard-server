@@ -23,15 +23,14 @@ func setupUserTestDB(t *testing.T) {
 func TestUserModel_CreateAndGet(t *testing.T) {
 	setupUserTestDB(t)
 
-	model := &User{}
-	err := model.Create(&core.User{
+	err := CreateUser(&core.User{
 		DisplayName: "Test User",
 		Email:       "test@example.com",
 		GoogleID:    "google-1",
 	})
 	assert.NoError(t, err)
 
-	user, err := model.GetByGoogleId("google-1")
+	user, err := GetUserByGoogleId("google-1")
 	assert.NoError(t, err)
 	assert.Equal(t, "Test User", user.DisplayName)
 	assert.Equal(t, "test@example.com", user.Email)

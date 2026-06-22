@@ -49,11 +49,20 @@ func Handler(opts ...Option) *gin.Engine {
 	}
 
 	whiteboardController := webcontrollers.NewWhiteboardController(&service.WhiteboardSVC{
-		Model: &db.Whiteboard{}})
+		CreateFn:      db.CreateWhiteboard,
+		DeleteFn:      db.DeleteWhiteboard,
+		GetByUserIDFn: db.GetWhiteboardsByUserID,
+	})
 	userController := webcontrollers.NewUserController(&service.UserSVC{
-		Model: &db.User{}})
+		CreateFn:        db.CreateUser,
+		GetByIDFn:       db.GetUserByID,
+		GetByGoogleIDFn: db.GetUserByGoogleId,
+	})
 	authController := webcontrollers.NewAuthController(&service.UserSVC{
-		Model: &db.User{}})
+		CreateFn:        db.CreateUser,
+		GetByIDFn:       db.GetUserByID,
+		GetByGoogleIDFn: db.GetUserByGoogleId,
+	})
 	roomState := state.NewRoomState()
 	roomController := webcontrollers.NewRoomController(roomState)
 	chatRoomState := state.NewRoomState()
@@ -61,7 +70,7 @@ func Handler(opts ...Option) *gin.Engine {
 	chatController := webcontrollers.NewChatController(chatRoomState, chatState)
 	drawingController := webcontrollers.DrawingController{
 		RoomService:    roomState,
-		DrawingService: service.NewDrawingSVC(&db.WhiteboardCanvasData{}),
+		DrawingService: service.NewDrawingSVC(db.CreateCanvasData, db.GetCanvasDataByWhiteboardID),
 	}
 
 	v1 := r.Group("/v1")

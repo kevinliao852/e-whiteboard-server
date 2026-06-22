@@ -18,21 +18,23 @@ type WhiteboardCanvasData struct {
 	UpdateAt     time.Time
 }
 
-func (w *WhiteboardCanvasData) Create(data *core.CanvasData) error {
-	w.WhiteboardId = uint(data.WhiteboardId)
-	w.StartX = uint(data.StartX)
-	w.EndX = uint(data.EndX)
-	w.StartY = uint(data.StartY)
-	w.EndY = uint(data.EndY)
+func CreateCanvasData(data *core.CanvasData) error {
+	row := &WhiteboardCanvasData{
+		WhiteboardId: uint(data.WhiteboardId),
+		StartX:       uint(data.StartX),
+		EndX:         uint(data.EndX),
+		StartY:       uint(data.StartY),
+		EndY:         uint(data.EndY),
+	}
 
-	if err := database.DB.Create(w).Error; err != nil {
+	if err := database.DB.Create(row).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (w *WhiteboardCanvasData) GetByWhiteboardID(whiteboardID int) ([]core.CanvasData, error) {
+func GetCanvasDataByWhiteboardID(whiteboardID int) ([]core.CanvasData, error) {
 	var rows []WhiteboardCanvasData
 	if err := database.DB.
 		Where("whiteboard_id = ?", whiteboardID).
@@ -57,13 +59,3 @@ func (w *WhiteboardCanvasData) GetByWhiteboardID(whiteboardID int) ([]core.Canva
 
 	return result, nil
 }
-
-func Create(wb *WhiteboardCanvasData) error {
-	if err := database.DB.Create(wb).Error; err != nil {
-		return err
-	}
-
-	return nil
-}
-
-var _ core.CanvasDataInterface = (*WhiteboardCanvasData)(nil)

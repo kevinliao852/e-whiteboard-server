@@ -3,17 +3,19 @@ package service
 import "github.com/kevinliao852/e-whiteboard-server/internal/core"
 
 type UserSVC struct {
-	Model core.UserModel
+	CreateFn        func(user *core.User) error
+	GetByIDFn       func(id string) (*core.User, error)
+	GetByGoogleIDFn func(gid string) (*core.User, error)
 }
 
 func (svc *UserSVC) GetUser(id string) (*core.User, error) {
-	return svc.Model.GetById(id)
+	return svc.GetByIDFn(id)
 }
 
 func (svc *UserSVC) Register(user *core.User) error {
-	return svc.Model.Create(user)
+	return svc.CreateFn(user)
 }
 
 func (svc *UserSVC) GetUserByGoogleId(gid string) (*core.User, error) {
-	return svc.Model.GetByGoogleId(gid)
+	return svc.GetByGoogleIDFn(gid)
 }

@@ -23,15 +23,7 @@ func setupCanvasDataTestDB(t *testing.T) {
 func TestCreate(t *testing.T) {
 	setupCanvasDataTestDB(t)
 
-	wb := &WhiteboardCanvasData{
-		WhiteboardId: 1,
-		StartX:       10,
-		EndX:         20,
-		StartY:       30,
-		EndY:         40,
-	}
-
-	err := wb.Create(&core.CanvasData{
+	err := CreateCanvasData(&core.CanvasData{
 		WhiteboardId: 1,
 		StartX:       10,
 		EndX:         20,
@@ -39,12 +31,17 @@ func TestCreate(t *testing.T) {
 		EndY:         40,
 	})
 	assert.NoError(t, err)
-	assert.NotZero(t, wb.ID)
-	assert.Equal(t, uint(1), wb.WhiteboardId)
-	assert.Equal(t, uint(10), wb.StartX)
-	assert.Equal(t, uint(20), wb.EndX)
-	assert.Equal(t, uint(30), wb.StartY)
-	assert.Equal(t, uint(40), wb.EndY)
+
+	var rows []WhiteboardCanvasData
+	err = database.DB.Find(&rows).Error
+	assert.NoError(t, err)
+	assert.Len(t, rows, 1)
+	assert.NotZero(t, rows[0].ID)
+	assert.Equal(t, uint(1), rows[0].WhiteboardId)
+	assert.Equal(t, uint(10), rows[0].StartX)
+	assert.Equal(t, uint(20), rows[0].EndX)
+	assert.Equal(t, uint(30), rows[0].StartY)
+	assert.Equal(t, uint(40), rows[0].EndY)
 }
 
 func TestGetByWhiteboardID(t *testing.T) {
@@ -60,8 +57,7 @@ func TestGetByWhiteboardID(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	model := &WhiteboardCanvasData{}
-	got, err := model.GetByWhiteboardID(1)
+	got, err := GetCanvasDataByWhiteboardID(1)
 	assert.NoError(t, err)
 	assert.Len(t, got, 2)
 	assert.Equal(t, 1, got[0].WhiteboardId)

@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"encoding/json"
 	"net/http"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/kevinliao852/e-whiteboard-server/internal/core"
 	log "github.com/sirupsen/logrus"
@@ -48,6 +50,18 @@ func (ctrl *ChatController) Chat() gin.HandlerFunc {
 			return
 		}
 
+		session := sessions.Default(ctx)
+		senderID, ok := sessionUserID(session.Get("user_id"))
+		if !ok || senderID <= 0 {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			return
+		}
+
+		senderName, _ := session.Get("display_name").(string)
+		if senderName == "" {
+			senderName = "Unknown"
+		}
+
 		if _, err := ctrl.roomService.CreateRoom(roomID); err != nil {
 			log.Printf("failed to create or load chat room: %v", err)
 			return
@@ -74,10 +88,16 @@ func (ctrl *ChatController) Chat() gin.HandlerFunc {
 
 		participant.ReadMessage(ctx.Request.Context(), func(message []byte) {
 			rawMessage := string(message)
-			if err := ctrl.roomService.BroadcastToRoom(roomID, rawMessage); err != nil {
+			chatMessage := ctrl.chatService.AppendMessage(roomID, senderID, senderName, rawMessage)
+			payload, err := json.Marshal(chatMessage)
+			if err != nil {
+				log.Printf("failed to marshal chat message: %v", err)
+				return
+			}
+
+			if err := ctrl.roomService.BroadcastToRoom(roomID, string(payload)); err != nil {
 				log.Printf("failed to broadcast chat message: %v", err)
 			}
-			ctrl.chatService.AppendMessage(roomID, rawMessage)
 		})
 	}
 }

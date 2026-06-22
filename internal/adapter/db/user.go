@@ -16,18 +16,14 @@ type User struct {
 	UpdateAt    time.Time
 }
 
-var _ core.UserModel = &User{}
-
-// Create implements [core.UserModel].
-func (u *User) Create(user *core.User) error {
+func CreateUser(user *core.User) error {
 	if err := database.DB.Create(user).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-// GetByGoogleId implements [core.UserModel].
-func (u *User) GetByGoogleId(gid string) (*core.User, error) {
+func GetUserByGoogleId(gid string) (*core.User, error) {
 	var user User
 	if err := database.DB.First(&user, "google_id = ?", gid).Error; err != nil {
 		return nil, err
@@ -42,8 +38,7 @@ func (u *User) GetByGoogleId(gid string) (*core.User, error) {
 	}, nil
 }
 
-// GetById implements [core.UserModel].
-func (u *User) GetById(id string) (*core.User, error) {
+func GetUserByID(id string) (*core.User, error) {
 	var user User
 	if err := database.DB.First(&user, "id = ?", id).Error; err != nil {
 		return nil, err
