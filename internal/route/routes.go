@@ -56,6 +56,9 @@ func Handler(opts ...Option) *gin.Engine {
 		Model: &db.User{}})
 	roomState := state.NewRoomState()
 	roomController := webcontrollers.NewRoomController(roomState)
+	chatRoomState := state.NewRoomState()
+	chatState := state.NewChatState()
+	chatController := webcontrollers.NewChatController(chatRoomState, chatState)
 	drawingController := webcontrollers.DrawingController{
 		RoomService:    roomState,
 		DrawingService: service.NewDrawingSVC(&db.WhiteboardCanvasData{}),
@@ -66,6 +69,7 @@ func Handler(opts ...Option) *gin.Engine {
 	// user routes
 	v1.GET("/user/:id", currentAuthMiddleware, userController.GetUser)
 	v1.GET("/rooms", roomController.ListRooms)
+	v1.GET("/chat-messages", chatController.GetChatMessages)
 
 	// whiteboard routes
 	v1.GET("/whiteboards", currentAuthMiddleware, whiteboardController.GetWhiteboardByUserId)
@@ -77,6 +81,7 @@ func Handler(opts ...Option) *gin.Engine {
 
 	// WebSocket routes
 	wsGroup := r.Group("/ws")
+	wsGroup.GET("/chat/:id", chatController.Chat())
 	wsGroup.GET("/drawing", drawingController.Draw())
 	wsGroup.GET("/drawing/:id", drawingController.Draw())
 
