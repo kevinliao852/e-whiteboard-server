@@ -68,6 +68,7 @@ func Handler(opts ...Option) *gin.Engine {
 
 	// user routes
 	v1.GET("/user/:id", currentAuthMiddleware, userController.GetUser)
+	v1.GET("/me", currentAuthMiddleware, userController.GetMe)
 	v1.GET("/rooms", roomController.ListRooms)
 	v1.GET("/chat-messages", chatController.GetChatMessages)
 

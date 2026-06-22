@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,17 +24,12 @@ func NewWhiteboardController(svc core.WhiteboardService) *WhiteboardController {
 	}
 }
 
-type GetWhiteboardByUserQuery struct {
-	UserID uint `form:"user-id" validate:"required,gt=0"`
-}
-
 type GetWhiteboardByIdResponse struct {
 	IDs []uint `json:"ids"`
 }
 
 type CreateWhiteboardRequest struct {
-	UserID uint   `json:"user_id" validate:"required,gt=0"`
-	Name   string `json:"name" validate:"required,min=1,max=100"`
+	Name string `json:"name" validate:"required,min=1,max=100"`
 }
 
 type DeleteWhiteboardRequest struct {
@@ -41,19 +37,14 @@ type DeleteWhiteboardRequest struct {
 }
 
 func (wc *WhiteboardController) GetWhiteboardByUserId(c *gin.Context) {
-	var query GetWhiteboardByUserQuery
-
-	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid query"})
+	session := sessions.Default(c)
+	userID, ok := sessionUserID(session.Get("user_id"))
+	if !ok || userID <= 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
-	if err := validate.Struct(query); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
-		return
-	}
-
-	ids, err := wc.service.GetUserWhiteboards(query.UserID)
+	ids, err := wc.service.GetUserWhiteboards(uint(userID))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create whiteboard"})
 		return
@@ -80,9 +71,16 @@ func (wc *WhiteboardController) CreateWhiteboard(c *gin.Context) {
 		return
 	}
 
+	session := sessions.Default(c)
+	userID, ok := sessionUserID(session.Get("user_id"))
+	if !ok || userID <= 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
 	whiteboard, err := wc.service.CreateWhiteboard(
 		core.Whiteboard{
-			UserId:    req.UserID,
+			UserId:    uint(userID),
 			Name:      req.Name,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),

@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/kevinliao852/e-whiteboard-server/internal/core"
 	"github.com/stretchr/testify/assert"
@@ -54,10 +56,18 @@ func TestWhiteboardController_GetWhiteboardByUserId(t *testing.T) {
 
 		ctrl := NewWhiteboardController(mockService)
 		router := gin.Default()
+		store := cookie.NewStore([]byte("test-secret"))
+		router.Use(sessions.Sessions("testsession", store))
+		router.Use(func(c *gin.Context) {
+			session := sessions.Default(c)
+			session.Set("user_id", 1)
+			_ = session.Save()
+			c.Next()
+		})
 		router.GET("/whiteboards", ctrl.GetWhiteboardByUserId)
 
 		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/whiteboards?user-id=1", nil)
+		req, _ := http.NewRequest("GET", "/whiteboards", nil)
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -72,17 +82,19 @@ func TestWhiteboardController_GetWhiteboardByUserId(t *testing.T) {
 		mockService.AssertExpectations(t)
 	})
 
-	t.Run("InvalidQuery", func(t *testing.T) {
+	t.Run("UnauthorizedWithoutSessionUserID", func(t *testing.T) {
 		mockService := new(MockWhiteboardService)
 		ctrl := NewWhiteboardController(mockService)
 		router := gin.Default()
+		store := cookie.NewStore([]byte("test-secret"))
+		router.Use(sessions.Sessions("testsession", store))
 		router.GET("/whiteboards", ctrl.GetWhiteboardByUserId)
 
 		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/whiteboards?user-id=abc", nil) // Invalid user-id
+		req, _ := http.NewRequest("GET", "/whiteboards", nil)
 		router.ServeHTTP(w, req)
 
-		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
 	})
 
 	t.Run("ServiceError", func(t *testing.T) {
@@ -91,10 +103,18 @@ func TestWhiteboardController_GetWhiteboardByUserId(t *testing.T) {
 
 		ctrl := NewWhiteboardController(mockService)
 		router := gin.Default()
+		store := cookie.NewStore([]byte("test-secret"))
+		router.Use(sessions.Sessions("testsession", store))
+		router.Use(func(c *gin.Context) {
+			session := sessions.Default(c)
+			session.Set("user_id", 1)
+			_ = session.Save()
+			c.Next()
+		})
 		router.GET("/whiteboards", ctrl.GetWhiteboardByUserId)
 
 		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/whiteboards?user-id=1", nil)
+		req, _ := http.NewRequest("GET", "/whiteboards", nil)
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
@@ -108,8 +128,7 @@ func TestWhiteboardController_CreateWhiteboard(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		mockService := new(MockWhiteboardService)
 		reqBody := CreateWhiteboardRequest{
-			UserID: 1,
-			Name:   "New Board",
+			Name: "New Board",
 		}
 
 		// Match any core.Whiteboard with correct UserId and Name
@@ -119,6 +138,14 @@ func TestWhiteboardController_CreateWhiteboard(t *testing.T) {
 
 		ctrl := NewWhiteboardController(mockService)
 		router := gin.Default()
+		store := cookie.NewStore([]byte("test-secret"))
+		router.Use(sessions.Sessions("testsession", store))
+		router.Use(func(c *gin.Context) {
+			session := sessions.Default(c)
+			session.Set("user_id", 1)
+			_ = session.Save()
+			c.Next()
+		})
 		router.POST("/whiteboards", ctrl.CreateWhiteboard)
 
 		body, _ := json.Marshal(reqBody)
@@ -135,6 +162,8 @@ func TestWhiteboardController_CreateWhiteboard(t *testing.T) {
 		mockService := new(MockWhiteboardService)
 		ctrl := NewWhiteboardController(mockService)
 		router := gin.Default()
+		store := cookie.NewStore([]byte("test-secret"))
+		router.Use(sessions.Sessions("testsession", store))
 		router.POST("/whiteboards", ctrl.CreateWhiteboard)
 
 		w := httptest.NewRecorder()
@@ -143,6 +172,23 @@ func TestWhiteboardController_CreateWhiteboard(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("UnauthorizedWithoutSessionUserID", func(t *testing.T) {
+		mockService := new(MockWhiteboardService)
+		ctrl := NewWhiteboardController(mockService)
+		router := gin.Default()
+		store := cookie.NewStore([]byte("test-secret"))
+		router.Use(sessions.Sessions("testsession", store))
+		router.POST("/whiteboards", ctrl.CreateWhiteboard)
+
+		body, _ := json.Marshal(CreateWhiteboardRequest{Name: "New Board"})
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/whiteboards", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
 	})
 }
 

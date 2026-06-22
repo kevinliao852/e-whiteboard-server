@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/api/idtoken"
 	"google.golang.org/api/option"
 	"gorm.io/gorm"
@@ -29,17 +30,35 @@ func (ac AuthController) Login(id string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
 		client := &http.Client{}
-		tokenValidator, _ := idtoken.NewValidator(context.Background(), option.WithHTTPClient(client))
+		tokenValidator, err := idtoken.NewValidator(context.Background(), option.WithHTTPClient(client))
+		if err != nil {
+			log.WithError(err).Error("failed to create Google ID token validator")
+			_ = c.Error(err).SetType(gin.ErrorTypePrivate)
+			c.JSON(http.StatusInternalServerError, map[string]string{"status": "auth failed"})
+			return
+		}
 
 		token := c.PostForm("idtoken")
 		if token == "" {
+			err := errors.New("missing idtoken form field")
+			log.WithError(err).Warn("login rejected")
+			_ = c.Error(err).SetType(gin.ErrorTypePrivate)
 			c.JSON(http.StatusBadRequest, map[string]string{"status": "invalid data"})
 			return
 		}
 
-		payload, _ := tokenValidator.Validate(context.Background(), token, id)
+		payload, err := tokenValidator.Validate(context.Background(), token, id)
+		if err != nil {
+			log.WithError(err).WithField("token_length", len(token)).Warn("Google ID token validation failed")
+			_ = c.Error(err).SetType(gin.ErrorTypePrivate)
+			c.JSON(http.StatusBadRequest, map[string]string{"status": "invalid data"})
+			return
+		}
 
 		if payload == nil {
+			err := errors.New("token validation returned nil payload")
+			log.WithError(err).Warn("login rejected")
+			_ = c.Error(err).SetType(gin.ErrorTypePrivate)
 			c.JSON(http.StatusBadRequest, map[string]string{"status": "invalid data"})
 			return
 		}
@@ -51,6 +70,8 @@ func (ac AuthController) Login(id string) gin.HandlerFunc {
 		// Check if database have this user's credential.
 		user, err := ac.service.GetUserByGoogleId(sub)
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			log.WithError(err).WithField("google_id", sub).Error("failed to load user by Google ID")
+			_ = c.Error(err).SetType(gin.ErrorTypePrivate)
 			c.JSON(http.StatusInternalServerError, map[string]string{"status": "auth failed"})
 			return
 		}
@@ -65,29 +86,33 @@ func (ac AuthController) Login(id string) gin.HandlerFunc {
 			err := ac.service.Register(newUser)
 
 			if err != nil {
+				log.WithError(err).WithField("google_id", sub).Error("failed to register user during login")
+				_ = c.Error(err).SetType(gin.ErrorTypePrivate)
 				c.JSON(http.StatusInternalServerError, map[string]string{"status": "auth failed"})
 				return
 			}
 
 			user, err = ac.service.GetUserByGoogleId(sub)
 			if err != nil {
+				log.WithError(err).WithField("google_id", sub).Error("failed to reload user after registration")
+				_ = c.Error(err).SetType(gin.ErrorTypePrivate)
 				c.JSON(http.StatusInternalServerError, map[string]string{"status": "auth failed"})
 				return
 			}
 		}
 
-		if session.Get("id") == nil {
-			session.Set("name", payload.Claims["given_name"])
-			session.Set("email", payload.Claims["email"])
-			session.Set("id", payload.Claims["aud"])
-			session.Set("exp", payload.Claims["exp"])
-			err = session.Save()
+		session.Set("user_id", user.ID)
+		session.Set("email", user.Email)
+		session.Set("display_name", user.DisplayName)
+		session.Set("google_id", user.GoogleID)
+		session.Set("exp", payload.Claims["exp"])
+		err = session.Save()
 
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, map[string]string{"status": "auth failed"})
-				return
-			}
-
+		if err != nil {
+			log.WithError(err).WithField("user_id", user.ID).Error("failed to save login session")
+			_ = c.Error(err).SetType(gin.ErrorTypePrivate)
+			c.JSON(http.StatusInternalServerError, map[string]string{"status": "auth failed"})
+			return
 		}
 
 		c.JSON(http.StatusOK, gin.H{

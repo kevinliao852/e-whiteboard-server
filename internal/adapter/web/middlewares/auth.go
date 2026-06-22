@@ -10,7 +10,7 @@ import (
 
 func AuthRequired(c *gin.Context) {
 	session := sessions.Default(c)
-	if session.Get("id") == nil {
+	if session.Get("user_id") == nil {
 		log.Info("Unauthorized access")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		c.AbortWithStatus(http.StatusUnauthorized)
