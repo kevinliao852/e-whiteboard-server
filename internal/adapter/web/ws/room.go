@@ -56,25 +56,3 @@ func (r *Room) Run(ctx context.Context) {
 		}
 	}
 }
-
-type EventStore interface {
-	SaveMessage(message []byte) error
-}
-
-func StartMessagePersistenceWorker(ctx context.Context, message chan []byte, saver EventStore, errChan *chan error) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-
-		case msg, ok := <-message:
-			if !ok {
-				return
-			}
-
-			if err := saver.SaveMessage(msg); err != nil {
-				fmt.Printf("failed to save message: %v\n", err)
-			}
-		}
-	}
-}
