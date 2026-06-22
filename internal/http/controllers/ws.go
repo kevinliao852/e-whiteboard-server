@@ -13,7 +13,8 @@ import (
 )
 
 type DrawingController struct {
-	RoomService core.RoomService
+	RoomService    core.RoomService
+	DrawingService core.DrawingService
 }
 
 // Draw handles WebSocket connections for a specific room.
@@ -58,6 +59,9 @@ func (dc DrawingController) Draw() gin.HandlerFunc {
 		participant.ReadMessage(ctx.Request.Context(), func(message []byte) {
 			if err := dc.RoomService.BroadcastToRoom(roomID, string(message)); err != nil {
 				log.Printf("failed to broadcast message: %v", err)
+			}
+			if err := dc.DrawingService.Enqueue(roomID, message); err != nil {
+				log.Printf("failed to enqueue drawing message: %v", err)
 			}
 		})
 	}

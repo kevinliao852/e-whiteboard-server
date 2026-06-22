@@ -54,7 +54,8 @@ func Handler(opts ...Option) *gin.Engine {
 	authController := controllers.NewAuthController(&service.UserSVC{
 		Model: &model.User{}})
 	drawingController := controllers.DrawingController{
-		RoomService: service.NewRoomSVC(),
+		RoomService:    service.NewRoomSVC(),
+		DrawingService: service.NewDrawingSVC(&model.WhiteboardCanvasData{}),
 	}
 
 	v1 := r.Group("/v1")

@@ -3,6 +3,7 @@ package model
 import (
 	"time"
 
+	"github.com/kevinliao852/e-whiteboard-server/internal/core"
 	"github.com/kevinliao852/e-whiteboard-server/internal/database"
 )
 
@@ -17,6 +18,20 @@ type WhiteboardCanvasData struct {
 	UpdateAt     time.Time
 }
 
+func (w *WhiteboardCanvasData) Create(data *core.CanvasData) error {
+	w.WhiteboardId = uint(data.WhiteboardId)
+	w.StartX = uint(data.StartX)
+	w.EndX = uint(data.EndX)
+	w.StartY = uint(data.StartY)
+	w.EndY = uint(data.EndY)
+
+	if err := database.DB.Create(w).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func Create(wb *WhiteboardCanvasData) error {
 	if err := database.DB.Create(wb).Error; err != nil {
 		return err
@@ -24,3 +39,5 @@ func Create(wb *WhiteboardCanvasData) error {
 
 	return nil
 }
+
+var _ core.CanvasDataInterface = (*WhiteboardCanvasData)(nil)
