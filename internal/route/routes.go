@@ -65,9 +65,9 @@ func Handler(opts ...Option) *gin.Engine {
 	v1.GET("/user/:id", currentAuthMiddleware, userController.GetUser)
 
 	// whiteboard routes
-	v1.GET("/whiteboards", whiteboardController.GetWhiteboardByUserId)
-	v1.POST("/whiteboards", whiteboardController.CreateWhiteboard)
-	v1.DELETE("/whiteboards/:id", whiteboardController.DeleteWhiteboard)
+	v1.GET("/whiteboards", currentAuthMiddleware, whiteboardController.GetWhiteboardByUserId)
+	v1.POST("/whiteboards", currentAuthMiddleware, whiteboardController.CreateWhiteboard)
+	v1.DELETE("/whiteboards/:id", currentAuthMiddleware, whiteboardController.DeleteWhiteboard)
 
 	// auth routes
 	r.POST("/login", authController.Login(os.Getenv("GOOGLE_CLIENT_ID")))
